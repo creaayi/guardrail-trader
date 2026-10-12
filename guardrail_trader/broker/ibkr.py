@@ -55,6 +55,19 @@ def check_account(mode: str, account_id: str) -> None:
         raise BrokerSafetyError(f"TRADING_MODE=live but account {account_id} is a paper account.")
 
 
+def check_capital(net_liquidation: float, fx_to_base: float, required_base: float, base: str) -> float:
+    """The broker account must hold at least the bot's virtual capital, converted to the base currency.
+
+    The paper account is capped (1 M USD), so a virtual budget larger than what the account can pay
+    for would let the bot "spend" money that isn't there. Returns the account value in base currency.
+    """
+    value = net_liquidation * fx_to_base
+    if not (math.isfinite(value) and value >= required_base):   # NaN-safe: unknown value fails closed
+        raise BrokerSafetyError(
+            f"account net liquidation {value:,.2f} {base} is below the required {required_base:,.2f} {base}.")
+    return value
+
+
 def _num(x) -> float:
     try:
         v = float(x)
@@ -192,7 +205,7 @@ class IBKRBroker:
         ]
 
     def stock(self, symbol: str, exchange: str = "SMART", currency: str = "USD") -> Contract:
-        """Build and qualify a stock/ETF contract. e.g. ('AAPL','SMART','USD'), ('VAS','ASX','AUD')."""
+        """Build and qualify a stock/ETF contract. e.g. ('AAPL','SMART','USD')."""
         contract = Stock(symbol.upper(), exchange, currency)
         qualified = [c for c in self.ib.qualifyContracts(contract) if c and c.conId]
         if not qualified:
@@ -221,7 +234,7 @@ class IBKRBroker:
         )
 
     def fx_to_base(self, currency: str, base: str) -> float:
-        """Base-currency units per 1 unit of `currency` (e.g. AUD per USD). IDEALPRO quote."""
+        """Base-currency units per 1 unit of `currency` (e.g. EUR per USD). IDEALPRO quote."""
         currency, base = currency.upper(), base.upper()
         if currency == base:
             return 1.0

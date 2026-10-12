@@ -1,6 +1,7 @@
 """Operator CLI for the journal (operator only - the bot never calls these).
 
-  .venv/bin/python scripts/journal_cli.py init                 # deposit budget from config/risk.toml (once)
+  .venv/bin/python scripts/journal_cli.py init                 # deposit budget from config/risk.toml (once;
+                                                               #   needs IB Gateway: the account must cover it)
   .venv/bin/python scripts/journal_cli.py topup [--confirm]    # deposit up to `capital` in config/risk.toml (dry run without --confirm)
   .venv/bin/python scripts/journal_cli.py status               # cash, holdings, halt state, recent activity
   .venv/bin/python scripts/journal_cli.py reset-halt --confirm # re-arm after a kill switch
@@ -11,6 +12,8 @@ import argparse
 import json
 import sys
 
+from guardrail_trader.broker import BrokerSafetyError, IBKRBroker, check_capital
+from guardrail_trader.config import load_ibkr_config
 from guardrail_trader.journal import Journal
 from guardrail_trader.risk import load_risk_config
 
@@ -30,6 +33,16 @@ def main() -> int:
     j = Journal()
 
     if args.cmd == "init":
+        # Refuse a virtual budget the paper account can't pay for (read-only connection, no orders).
+        try:
+            with IBKRBroker(load_ibkr_config(), readonly=True) as broker:
+                snap = broker.ensure_ready()
+                value = check_capital(snap.net_liquidation, broker.fx_to_base(snap.currency, cfg.base_currency),
+                                      cfg.capital, cfg.base_currency)
+        except BrokerSafetyError as e:
+            print(f"Refusing to initialise: {e}")
+            return 2
+        print(f"Account {snap.account_id}: {value:,.2f} {cfg.base_currency} covers capital {cfg.capital:,.2f}.")
         j.init_budget(cfg.capital, cfg.base_currency)
         print(f"Deposited {cfg.capital:,.2f} {cfg.base_currency} into the virtual ledger.")
 

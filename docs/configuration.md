@@ -17,8 +17,8 @@ In Docker, `config/` is bind-mounted read-only, so edits on the host apply witho
 
 ```toml
 [budget]
-capital = 10000.0      # total virtual budget the bot may use
-currency = "AUD"       # base currency for all accounting
+capital = 800000.0     # total virtual budget the bot may use
+currency = "EUR"       # base currency for all accounting
 
 [limits]
 max_position_pct = 25.0         # no single holding above 25% of portfolio value
@@ -30,7 +30,9 @@ allow_fractional = false        # IBKR rejects fractional orders via the API
 ```
 
 - The budget is deposited into the journal's ledger once, by `scripts/journal_cli.py init`, so set
-  `capital` and `currency` **before** you run `init`.
+  `capital` and `currency` **before** you run `init`. `init` connects to IB Gateway (read-only) and refuses
+  if the account's net liquidation, converted to the base currency, is below `capital`; every run checks the
+  same (status `capital_guard`), after the kill switch so a forced liquidation is never blocked.
 - To raise the budget later, raise `capital` and run `scripts/journal_cli.py topup` (a dry run that prints
   the difference), then `topup --confirm` to deposit it. It deposits `capital` minus what is already
   deposited, so running it twice deposits once. Deposits are append-only: lowering `capital` below the

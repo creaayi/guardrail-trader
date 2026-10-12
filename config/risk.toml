@@ -1,13 +1,14 @@
 # Risk limits. Code enforces these; Claude can read them but never change them.
 
 [budget]
-capital = 10000.0      # total virtual budget the bot may use (paper phase; the paper account itself holds much more).
+capital = 800000.0     # total virtual budget the bot may use (paper account capped at 1 M USD; CHANGELOG 12/10/2026).
+                       # init and every run refuse to start if the account's net liquidation in EUR is below this.
                        # Raising it needs `journal_cli.py topup --confirm` to deposit the difference into the ledger.
-currency = "AUD"       # base currency for all accounting
+currency = "EUR"       # base currency for all accounting
 
 [limits]
 max_position_pct = 25.0         # no single holding above 25% of portfolio value
-max_trades_per_month = 10       # orders submitted per calendar month (Sydney time)
+max_trades_per_month = 10       # orders submitted per calendar month (Paris time)
 max_drawdown_pct = 25.0         # kill switch: fall >= 25% from peak -> sell all, halt, manual reset
 max_price_deviation_pct = 2.0   # fat-finger guard: limit price must be within 2% of reference price
 max_commission_pct = 10.0       # block orders whose commission exceeds 10% of order value
@@ -15,7 +16,7 @@ allow_fractional = false        # IBKR rejects fractional orders via API (error 
 
 # Only instruments in these CSV files may be traded (columns: symbol,exchange,currency,name,source).
 # No files / empty files = nothing can be bought (fail-closed).
-# US stocks/ETFs: exchange SMART, currency USD.  ASX: exchange ASX, currency AUD.
+# US stocks/ETFs: exchange SMART, currency USD.
 [universe]
 files = [
   "config/universe/my_picks.csv",  # owner's own picks

@@ -39,3 +39,12 @@ Source : validation du plan `docs/adaptation-plan.md` (§5). `TASKS.md` mis à j
 Claude Code merge lui-même ses PR avec `gh pr merge --squash --delete-branch`, uniquement si
 `pytest -q` est vert, et enchaîne sur la tâche suivante. Exceptions : T3, T4 et T5 — la PR est
 ouverte, son résumé transmis à l'humain, et le merge attend sa validation. `TASKS.md` mis à jour.
+
+## 12/10/2026 — T1 appliquée : devise EUR et capital
+
+- `config/risk.toml` : `capital` 10 000 → **800 000**, `currency` AUD → **EUR** (décision 8 ci-dessus).
+- `CLAUDE.md` §1 et §4 : capital 1 000 000 → 800 000 EUR, garde-fou décrit.
+- Calendrier mensuel (quota d'ordres, budget LLM) et horodatages du journal : Sydney → **Europe/Paris**.
+- Garde-fou valeur liquidative : à `journal_cli.py init` et à chaque run (statut `capital_guard`,
+  code 3). Placé après le kill switch dans le run, pour qu'une liquidation forcée ne soit jamais bloquée.
+- Aucune autre limite modifiée.

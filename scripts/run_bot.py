@@ -5,7 +5,7 @@
   .venv/bin/python scripts/run_bot.py                           # paper trading (market must be open)
 
 The run itself is guardrail_trader.pipeline.run_once(); this file wires in IBKR and the LLM.
-Exit codes: 0 ok/skipped, 1 error, 2 gateway unusable (transient), 3 reconciliation failed.
+Exit codes: 0 ok/skipped, 1 error, 2 gateway unusable (transient), 3 needs a human (reconciliation / capital guard).
 """
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ from guardrail_trader.risk import load_risk_config
 
 
 def log(msg: str) -> None:
-    print(f"{datetime.now(ZoneInfo('Australia/Sydney')):%H:%M:%S} {msg}", flush=True)
+    print(f"{datetime.now(ZoneInfo('Europe/Paris')):%H:%M:%S} {msg}", flush=True)
 
 
 def llm_setup(fake: bool) -> LLMSetup:
