@@ -110,11 +110,17 @@ break a limit that each order passes alone.
 | Rule | Default | Configurable in |
 |---|---|---|
 | Only allowlisted instruments | universe CSVs | `[universe] files` |
-| Max single holding | 25% of portfolio | `max_position_pct` |
-| Max orders per calendar month (Sydney); once used up, runs skip Claude until the 1st | 10 | `max_trades_per_month` |
+| Max single holding | 2% of portfolio | `max_position_pct` |
+| Min line after a BUY / left after a partial SELL (full SELL always allowed) | 0.5% | `min_position_pct` |
+| Max per sector (`sector` column) | 20% | `max_sector_pct` |
+| Max US holdings (`country` US) | 70% | `max_us_pct` |
+| Max equity (cash ≥ the rest) | 90% | `max_equity_pct` |
+| No re-entry after a stop exit | 10 business days | `reentry_cooldown_days` |
+| Hedge instruments (pocket C) blocked | while `enable_hedge = false` | `[universe]` |
+| Max orders per calendar month (Paris); once used up, runs skip Claude until the 1st | 60 | `max_trades_per_month` |
 | Kill switch: drawdown from peak | 25% → sell all, halt until manual reset; holdings left unsold (market closed) are sold at the next open run | `max_drawdown_pct` |
-| Limit price within ± of reference | 2% | `max_price_deviation_pct` |
-| Commission ≤ share of order value | 10% | `max_commission_pct` |
+| Limit price within ± of reference | 0.5% | `max_price_deviation_pct` |
+| Commission ≤ share of order value | 1% | `max_commission_pct` |
 | Whole shares only | on | `allow_fractional` |
 | No shorting, no margin | always | hard-coded |
 | Invalid config refuses to load | always | hard-coded |

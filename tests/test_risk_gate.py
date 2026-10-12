@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pytest
 
+from guardrail_trader.config import PROJECT_ROOT
 from guardrail_trader.risk import (
     Holding, Instrument, MarketInfo, PortfolioState, Proposal, RiskConfig,
     evaluate, kill_switch_triggered, liquidation_proposals, load_risk_config,
@@ -146,7 +147,10 @@ def test_input_state_not_mutated():
 
 def test_shipped_config_loads_and_is_fail_closed():
     c = load_risk_config()
-    assert (c.max_position_pct, c.max_trades_per_month, c.max_drawdown_pct) == (25.0, 10, 25.0)
+    assert (c.max_position_pct, c.max_trades_per_month, c.max_drawdown_pct) == (2.0, 60, 25.0)
+    assert (c.max_price_deviation_pct, c.max_commission_pct) == (0.5, 1.0)
+    assert (c.min_position_pct, c.max_sector_pct, c.max_us_pct, c.max_equity_pct, c.reentry_cooldown_days) == \
+        (0.5, 20.0, 70.0, 90.0, 10)
     assert c.enable_hedge is False and "IWDA:EUR" in c.hedge and not set(c.hedge) & set(c.universe)
 
 
@@ -162,3 +166,125 @@ def test_invalid_config_refuses_to_load(tmp_path: Path):
 def test_non_finite_numbers_blocked_not_crashed(qty, px):
     d = one(buy(qty=qty, px=px))  # e.g. a model sending "inf" as a quantity
     assert not d.approved and d.reasons
+
+
+# ------------------------------------------------------------------ T3 rules (CLAUDE.md §4)
+T3_UNI = {i.key: i for i in [
+    Instrument("AAA", "SMART", "USD", "Aaa", "Technology", "US"),
+    Instrument("BBB", "SMART", "USD", "Bbb", "Technology", "US"),
+    Instrument("CCC", "IBIS", "EUR", "Ccc", "Technology", "DE"),
+    Instrument("DDD", "SBF", "EUR", "Ddd", "Energy", "FR"),
+    Instrument("EEE", "SMART", "USD", "Eee", "Energy", "US"),
+]}
+T3_MKT = {k: MarketInfo(10.0, 1.0, 0.0) for k in T3_UNI}   # every price 10 in base currency, no commission
+
+
+def t3cfg(**kw):
+    base = dict(universe=T3_UNI, max_position_pct=100.0, min_position_pct=0.0, max_sector_pct=100.0,
+                max_us_pct=100.0, max_equity_pct=100.0, reentry_cooldown_days=10)
+    base.update(kw)
+    return cfg(**base)
+
+
+def t3buy(sym, qty, ex=None):
+    i = next(i for i in T3_UNI.values() if i.symbol == sym)
+    return Proposal(sym, ex or i.exchange, i.currency, "BUY", qty, 10.0, "t3")
+
+
+def t3(props, c, state=None):
+    state = state or PortfolioState(cash_base=1000.0, peak_value_base=1000.0)
+    ds, _ = evaluate(props, state, T3_MKT, c)
+    return ds
+
+
+def test_min_position_size_at_entry():
+    (d,) = t3([t3buy("DDD", 4)], t3cfg(min_position_pct=0.5))            # 40 / 1000 = 4% ok
+    assert d.approved
+    (d,) = t3([t3buy("DDD", 4)], t3cfg(min_position_pct=5.0))            # 4% < 5%
+    assert not d.approved and any("min 5.0%" in r for r in d.reasons)
+
+
+def test_partial_sell_cannot_leave_a_line_below_the_minimum_but_a_full_sell_can():
+    state = PortfolioState(cash_base=900.0, holdings={"DDD:EUR": Holding(10, 10.0)}, peak_value_base=1000.0)
+    c = t3cfg(min_position_pct=5.0)
+    sell_ddd = lambda q: Proposal("DDD", "SBF", "EUR", "SELL", q, 10.0)  # noqa: E731
+    (d,) = t3([sell_ddd(6)], c, state)                                   # leaves 4% < 5%
+    assert not d.approved and any("leave" in r for r in d.reasons)
+    assert t3([sell_ddd(10)], c, state)[0].approved                       # full sale
+    assert t3([sell_ddd(5)], c, state)[0].approved                        # leaves 5%
+
+
+def test_sector_cap():
+    state = PortfolioState(cash_base=850.0, holdings={"AAA:USD": Holding(15, 10.0)}, peak_value_base=1000.0)
+    (d,) = t3([t3buy("CCC", 6)], t3cfg(max_sector_pct=20.0), state)       # Technology 150 + 60 = 21%
+    assert not d.approved and any("sector Technology" in r for r in d.reasons)
+    assert t3([t3buy("CCC", 5)], t3cfg(max_sector_pct=20.0), state)[0].approved   # exactly 20%
+    assert t3([t3buy("DDD", 6)], t3cfg(max_sector_pct=20.0), state)[0].approved   # other sector
+
+
+def test_burst_that_breaks_a_sector_together_but_not_separately():
+    c = t3cfg(max_sector_pct=20.0)
+    burst = [t3buy("AAA", 10), t3buy("BBB", 10), t3buy("CCC", 10)]        # 10% each, all Technology
+    for p in burst:
+        assert t3([p], c)[0].approved                                     # alone: fine
+    assert [d.approved for d in t3(burst, c)] == [True, True, False]      # together: the third breaks 20%
+
+
+def test_us_cap_counts_us_country_only():
+    state = PortfolioState(cash_base=300.0, holdings={"AAA:USD": Holding(70, 10.0)}, peak_value_base=1000.0)
+    c = t3cfg(max_us_pct=70.0)
+    (d,) = t3([t3buy("EEE", 1)], c, state)
+    assert not d.approved and any("US holdings" in r for r in d.reasons)
+    assert t3([t3buy("DDD", 10)], c, state)[0].approved                   # FR stock: not US
+
+
+def test_equity_cap_keeps_cash():
+    state = PortfolioState(cash_base=150.0, holdings={"DDD:EUR": Holding(85, 10.0)}, peak_value_base=1000.0)
+    c = t3cfg(max_equity_pct=90.0)
+    assert t3([t3buy("CCC", 5)], c, state)[0].approved                    # 90%
+    (d,) = t3([t3buy("CCC", 6)], c, state)                                # 91%
+    assert not d.approved and any("equity exposure" in r for r in d.reasons)
+
+
+def test_reentry_cooldown_after_a_stop():
+    state = PortfolioState(cash_base=1000.0, peak_value_base=1000.0, recently_stopped={"DDD:EUR": "2026-10-26"})
+    (d,) = t3([t3buy("DDD", 2)], t3cfg(), state)
+    assert not d.approved and any("2026-10-26" in r for r in d.reasons)
+    assert t3([t3buy("CCC", 2)], t3cfg(), state)[0].approved
+
+
+def test_sells_are_never_blocked_by_exposure_caps():
+    state = PortfolioState(cash_base=0.0, holdings={"AAA:USD": Holding(100, 10.0)}, peak_value_base=1000.0,
+                           recently_stopped={"AAA:USD": "2026-10-26"})
+    c = t3cfg(max_sector_pct=20.0, max_us_pct=70.0, max_equity_pct=90.0)
+    assert t3([Proposal("AAA", "SMART", "USD", "SELL", 50, 10.0)], c, state)[0].approved
+
+
+@pytest.mark.parametrize("key,value", [
+    ("min_position_pct", "2.0"),          # not below max_position_pct (2.0 in this file)
+    ("min_position_pct", "0"),
+    ("max_sector_pct", "120"),
+    ("max_us_pct", "-1"),
+    ("max_equity_pct", "0"),
+    ("reentry_cooldown_days", "-1"),
+    ("reentry_cooldown_days", "1.5"),
+])
+def test_t3_keys_are_validated(tmp_path: Path, key, value):
+    text = (PROJECT_ROOT / "config" / "risk.toml").read_text()
+    import re
+    text = re.sub(rf"(?m)^{key} = [^#\n]+", f"{key} = {value} ", text)
+    p = tmp_path / "risk.toml"
+    p.write_text(text.replace('"config/universe/', f'"{PROJECT_ROOT}/config/universe/'))
+    with pytest.raises(ValueError):
+        load_risk_config(p)
+
+
+@pytest.mark.parametrize("key", ["min_position_pct", "max_sector_pct", "max_us_pct", "max_equity_pct",
+                                 "reentry_cooldown_days"])
+def test_t3_keys_are_required(tmp_path: Path, key):
+    import re
+    text = re.sub(rf"(?m)^{key} = .*\n", "", (PROJECT_ROOT / "config" / "risk.toml").read_text())
+    p = tmp_path / "risk.toml"
+    p.write_text(text.replace('"config/universe/', f'"{PROJECT_ROOT}/config/universe/'))
+    with pytest.raises(KeyError):
+        load_risk_config(p)

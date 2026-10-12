@@ -68,6 +68,11 @@ max_trades_per_month = 10
 max_drawdown_pct = 25.0
 max_price_deviation_pct = 2.0
 max_commission_pct = 10.0
+min_position_pct = 0.5
+max_sector_pct = 100.0
+max_us_pct = 100.0
+max_equity_pct = 100.0
+reentry_cooldown_days = 10
 [universe]
 files = ["{tmp_path / 'core.csv'}"]
 hedge_files = ["{tmp_path / 'hedge.csv'}"]

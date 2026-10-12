@@ -7,11 +7,16 @@ capital = 800000.0     # total virtual budget the bot may use (paper account cap
 currency = "EUR"       # base currency for all accounting
 
 [limits]
-max_position_pct = 25.0         # no single holding above 25% of portfolio value
-max_trades_per_month = 10       # orders submitted per calendar month (Paris time)
+max_position_pct = 2.0          # no single holding above 2% of portfolio value (checked at entry)
+min_position_pct = 0.5          # no line below 0.5% after a BUY, or left after a partial SELL (full SELL always allowed)
+max_sector_pct = 20.0           # per `sector` column of the universe CSVs
+max_us_pct = 70.0               # holdings with country US
+max_equity_pct = 90.0           # all holdings: cash stays >= 10%
+reentry_cooldown_days = 10      # business days with no BUY of an instrument after its stop was hit
+max_trades_per_month = 60       # orders submitted per calendar month (Paris time); raised from 10 per CLAUDE.md §4
 max_drawdown_pct = 25.0         # kill switch: fall >= 25% from peak -> sell all, halt, manual reset
-max_price_deviation_pct = 2.0   # fat-finger guard: limit price must be within 2% of reference price
-max_commission_pct = 10.0       # block orders whose commission exceeds 10% of order value
+max_price_deviation_pct = 0.5   # fat-finger guard: limit price must be within 0.5% of reference price
+max_commission_pct = 1.0        # block orders whose commission exceeds 1% of order value
 allow_fractional = false        # IBKR rejects fractional orders via API (error 10243, verified 2026-09-21)
 
 # Only instruments in these CSV files may be traded
