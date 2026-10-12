@@ -2,13 +2,19 @@
 from __future__ import annotations
 
 import csv
+import re
 import tomllib
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from guardrail_trader.config import PROJECT_ROOT
 
 DEFAULT_RISK_PATH = PROJECT_ROOT / "config" / "risk.toml"
+
+# CLAUDE.md §3: US via SMART; Europe via SMART routing with these primary exchanges.
+EXCHANGES = {"SMART", "SBF", "AEB", "IBIS", "LSE", "EBS"}
+CURRENCIES = {"USD", "EUR", "GBP", "CHF"}
+UNIVERSE_COLUMNS = ("symbol", "exchange", "currency", "name", "sector", "country", "source")
 
 
 def instrument_key(symbol: str, currency: str) -> str:
@@ -19,8 +25,11 @@ def instrument_key(symbol: str, currency: str) -> str:
 @dataclass(frozen=True)
 class Instrument:
     symbol: str
-    exchange: str
+    exchange: str   # SMART (US) or the primary exchange (SBF, AEB, IBIS, LSE, EBS); orders route via SMART
     currency: str
+    name: str = ""
+    sector: str = ""
+    country: str = ""   # ISO 3166 alpha-2; "US" = US market (for max_us_pct)
 
     @property
     def key(self) -> str:
@@ -37,7 +46,10 @@ class RiskConfig:
     max_price_deviation_pct: float
     max_commission_pct: float
     allow_fractional: bool
-    universe: dict[str, Instrument]  # key -> Instrument
+    universe: dict[str, Instrument]  # key -> Instrument (what may be traded)
+    # Pocket C instruments (hedge.csv). Never in `universe` and always blocked by the gate unless enabled.
+    hedge: dict[str, Instrument] = field(default_factory=dict)
+    enable_hedge: bool = False
 
 
 def _pct(name: str, v, lo: float = 0.0, hi: float = 100.0) -> float:
@@ -48,14 +60,38 @@ def _pct(name: str, v, lo: float = 0.0, hi: float = 100.0) -> float:
 
 
 def _read_universe_csv(path: Path) -> list[Instrument]:
+    """Fail-closed: a missing column or field, or an unknown exchange/currency, refuses the whole file."""
     with open(path, newline="") as f:
-        rows = list(csv.DictReader(f))
+        reader = csv.DictReader(f)
+        missing = [c for c in UNIVERSE_COLUMNS if c not in (reader.fieldnames or [])]
+        if missing:
+            raise ValueError(f"{path.name}: missing column(s) {missing}; expected {','.join(UNIVERSE_COLUMNS)}")
+        rows = list(reader)
     out = []
     for i, r in enumerate(rows, start=2):
-        sym, ex, ccy = (r.get("symbol") or "").strip(), (r.get("exchange") or "").strip(), (r.get("currency") or "").strip()
-        if not (sym and ex and ccy):
-            raise ValueError(f"{path.name}:{i} needs symbol, exchange and currency")
-        out.append(Instrument(sym.upper(), ex.upper(), ccy.upper()))
+        v = {c: (r.get(c) or "").strip() for c in UNIVERSE_COLUMNS}
+        empty = [c for c in ("symbol", "exchange", "currency", "name", "sector", "country") if not v[c]]
+        if empty:
+            raise ValueError(f"{path.name}:{i} has no {', '.join(empty)}")
+        ex, ccy, country = v["exchange"].upper(), v["currency"].upper(), v["country"].upper()
+        if ex not in EXCHANGES:
+            raise ValueError(f"{path.name}:{i} exchange {ex} not in {sorted(EXCHANGES)}")
+        if ccy not in CURRENCIES:
+            raise ValueError(f"{path.name}:{i} currency {ccy} not in {sorted(CURRENCIES)}")
+        if not re.fullmatch(r"[A-Z]{2}", country):
+            raise ValueError(f"{path.name}:{i} country must be an ISO alpha-2 code, got {v['country']!r}")
+        out.append(Instrument(v["symbol"].upper(), ex, ccy, v["name"], v["sector"], country))
+    return out
+
+
+def _read_instruments(files: list[str]) -> dict[str, Instrument]:
+    out: dict[str, Instrument] = {}
+    for rel in files:
+        for inst in _read_universe_csv(PROJECT_ROOT / rel):
+            prev = out.get(inst.key)
+            if prev and prev.exchange != inst.exchange:
+                raise ValueError(f"{inst.key} listed with conflicting exchanges {prev.exchange} / {inst.exchange}")
+            out[inst.key] = inst  # same ticker in several files is fine
     return out
 
 
@@ -72,13 +108,17 @@ def load_risk_config(path: Path | str = DEFAULT_RISK_PATH) -> RiskConfig:
     if trades < 0:
         raise ValueError("max_trades_per_month must be >= 0")
 
-    universe: dict[str, Instrument] = {}
-    for rel in raw.get("universe", {}).get("files", []):
-        for inst in _read_universe_csv(PROJECT_ROOT / rel):
-            prev = universe.get(inst.key)
-            if prev and prev.exchange != inst.exchange:
-                raise ValueError(f"{inst.key} listed with conflicting exchanges {prev.exchange} / {inst.exchange}")
-            universe[inst.key] = inst  # same ticker in several files is fine
+    u = raw.get("universe", {})
+    universe = _read_instruments(u.get("files", []))
+    hedge = _read_instruments(u.get("hedge_files", []))
+    enable_hedge = u.get("enable_hedge", False)
+    if not isinstance(enable_hedge, bool):
+        raise ValueError(f"universe.enable_hedge must be true or false, got {enable_hedge!r}")
+    both = sorted(set(universe) & set(hedge))
+    if both:
+        raise ValueError(f"{both} listed both in the universe and in the hedge files")
+    if enable_hedge:
+        universe = {**universe, **hedge}
 
     return RiskConfig(
         capital=capital,
@@ -90,4 +130,6 @@ def load_risk_config(path: Path | str = DEFAULT_RISK_PATH) -> RiskConfig:
         max_commission_pct=_pct("max_commission_pct", lim["max_commission_pct"]),
         allow_fractional=bool(lim.get("allow_fractional", False)),
         universe=universe,
+        hedge=hedge,
+        enable_hedge=enable_hedge,
     )

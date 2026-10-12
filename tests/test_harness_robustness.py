@@ -92,6 +92,10 @@ def test_fill_details_waits_until_executions_add_up():
 
 
 # ---------------------------------------------------------------- executor
+_IB = IBKRBroker.__new__(IBKRBroker)   # only for its OrderResult conversion
+_IB._magnifiers = {}
+
+
 class FakeBroker:
     """Order placed -> 2 of 5 fill -> cancel doesn't confirm in time."""
     def __init__(self):
@@ -107,13 +111,13 @@ class FakeBroker:
         pass
 
     def cancel_order(self, oid):
-        return IBKRBroker._to_result(self.trade)
+        return _IB._to_result(self.trade)
 
     def fill_details(self, oid):
         return 2.0, 110.0, 1.0, "USD"
 
     def order_result(self, oid):
-        return IBKRBroker._to_result(self.trade)
+        return _IB._to_result(self.trade)
 
 
 def test_partial_fill_books_only_filled_and_warns(tmp_path):

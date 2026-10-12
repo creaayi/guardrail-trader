@@ -121,6 +121,8 @@ def _check(p: Proposal, sim: PortfolioState, market: dict[str, MarketInfo], cfg:
 
     if action not in ("BUY", "SELL"):
         return [f"action must be BUY or SELL, got {p.action!r}"]
+    if p.key in cfg.hedge and not cfg.enable_hedge:
+        return [f"{p.key} is a hedge instrument (pocket C), disabled in phase 1 (enable_hedge = false)"]
     if p.key not in cfg.universe:
         r.append(f"{p.key} is not on the allowlist")
     elif cfg.universe[p.key].exchange != p.exchange.upper():

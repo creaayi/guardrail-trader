@@ -12,10 +12,8 @@ import math
 import sys
 import time
 
-from ib_async import Stock
-
 from guardrail_trader.broker import IBKRBroker
-from guardrail_trader.broker.ibkr import _num
+from guardrail_trader.broker.ibkr import _num, stock_contract, to_major
 from guardrail_trader.config import PROJECT_ROOT, load_ibkr_config
 from guardrail_trader.risk import load_risk_config
 
@@ -26,7 +24,8 @@ OUT = PROJECT_ROOT / "data" / "affordability.csv"
 def main() -> int:
     cfg = load_risk_config()
     cap_base = cfg.capital * cfg.max_position_pct / 100
-    picks = {r["symbol"] for r in csv.DictReader(open(PROJECT_ROOT / "config/universe/my_picks.csv"))}
+    picks_file = PROJECT_ROOT / "config/universe/my_picks.csv"
+    picks = {r["symbol"] for r in csv.DictReader(open(picks_file))} if picks_file.exists() else set()
     insts = sorted(cfg.universe.values(), key=lambda i: i.symbol)
     rows = []
 
@@ -34,7 +33,7 @@ def main() -> int:
         fx = {c: b.fx_to_base(c, cfg.base_currency) for c in {i.currency for i in insts}}
         for n in range(0, len(insts), BATCH):
             batch = insts[n:n + BATCH]
-            contracts = [Stock(i.symbol, i.exchange, i.currency) for i in batch]
+            contracts = [stock_contract(i.symbol, i.exchange, i.currency) for i in batch]
             b.ib.qualifyContracts(*contracts)
             live = [(i, c) for i, c in zip(batch, contracts) if c.conId]
             tickers = [(i, c, b.ib.reqMktData(c)) for i, c in live]
@@ -46,7 +45,7 @@ def main() -> int:
             for i, c, t in tickers:
                 b.ib.cancelMktData(c)
                 px = _num(t.marketPrice())
-                px = px if not math.isnan(px) else _num(t.close)
+                px = to_major(px if not math.isnan(px) else _num(t.close), b.magnifier(c))
                 rows.append((i, px))
             for i in batch:
                 if i not in [x for x, _ in live]:

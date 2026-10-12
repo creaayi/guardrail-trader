@@ -29,6 +29,7 @@ Mise à jour du 12/10/2026 : décisions de validation de T0 intégrées (voir `C
 - `hedge.csv` hors univers achetable en phase 1 : nouvelle clé `enable_hedge = false` dans `config/risk.toml` ; `list_universe` ne l'expose pas ; la gate rejette tout ordre sur un ticker de `hedge.csv` tant que `enable_hedge` est faux. Le fichier reste lu pour le prix d'IWDA (T7).
 - Vérifier avec `scripts/check_connection.py` que chaque exchange IBKR européen résout correctement (contrat qualifié) sur un échantillon.
 - Tests : parsing CSV, rejet d'une ligne sans secteur, conversion d'un titre GBX (obligatoire), rejet d'un ordre sur un ticker de `hedge.csv`.
+- État au 12/10/2026 : code et tests mergés ; `us_core.csv` / `eu_core.csv` vides (fail-closed) jusqu'au premier `refresh_universe.py` et `check_connection.py --sample`, qui exigent IB Gateway (configuré en T10). Filtre capitalisation ≥ 2 Mds : aucune source gratuite accessible, signalé `cap unverified` dans `source` — décision humaine attendue.
 
 ## T2b — Classement momentum (calculé par le code)
 - Cache SQLite des barres quotidiennes (OHLCV) issues de l'historique IBKR, rafraîchi le week-end par lots pour respecter les limites de requêtes IBKR.

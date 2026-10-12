@@ -6,6 +6,8 @@ again in run_bot.py before anything is sent to IBKR.
 """
 from __future__ import annotations
 
+import csv
+import io
 import json
 import os
 import time
@@ -63,7 +65,7 @@ TOOLS = [
      "description": "Current virtual portfolio: cash, holdings with prices and weights, total value, peak, drawdown, orders used this month.",
      "input_schema": {"type": "object", "properties": {}}},
     {"name": "list_universe",
-     "description": "Allowlisted instruments with latest price. Filter to keep output small.",
+     "description": "Allowlisted instruments (name, sector, country) with latest price. Filter to keep output small.",
      "input_schema": {"type": "object", "properties": {
          "only_affordable": {"type": "boolean", "description": "Only instruments where 1 share fits the max position size. Default true."},
          "my_picks_only": {"type": "boolean", "description": "Only the owner's picks."},
@@ -253,7 +255,11 @@ class TradingAgent:
     def _universe(self, a) -> str:
         only_aff = a.get("only_affordable", True)
         syms = {s.upper() for s in a.get("symbols") or []}
-        rows = ["symbol,currency,price,price_base,my_pick"]
+        buf = io.StringIO()
+        out = csv.writer(buf, lineterminator="\n")   # names can contain commas
+        out.writerow(["symbol", "currency", "name", "sector", "country", "price", "price_base", "my_pick"])
+        n = 0
+        # cfg.universe never holds hedge instruments unless enable_hedge (see risk/config.py)
         for key, inst in sorted(self.cfg.universe.items()):
             px = self.market.prices.get(key)
             if px is None or (syms and inst.symbol not in syms):
@@ -263,10 +269,12 @@ class TradingAgent:
             pb = px * self.market.fx[inst.currency]
             if only_aff and pb > self.max_pos_base:
                 continue
-            rows.append(f"{inst.symbol},{inst.currency},{px:.2f},{pb:.2f},{str(inst.symbol in self.picks).lower()}")
-            if len(rows) > int(a.get("limit", 600)):
+            out.writerow([inst.symbol, inst.currency, inst.name, inst.sector, inst.country, f"{px:.2f}", f"{pb:.2f}",
+                          str(inst.symbol in self.picks).lower()])
+            n += 1
+            if n >= int(a.get("limit", 600)):
                 break
-        return "\n".join(rows)
+        return buf.getvalue().rstrip("\n")
 
     def _history(self, a) -> str:
         if self.history_calls >= MAX_HISTORY_CALLS:

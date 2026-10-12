@@ -14,12 +14,14 @@ max_price_deviation_pct = 2.0   # fat-finger guard: limit price must be within 2
 max_commission_pct = 10.0       # block orders whose commission exceeds 10% of order value
 allow_fractional = false        # IBKR rejects fractional orders via API (error 10243, verified 2026-09-21)
 
-# Only instruments in these CSV files may be traded (columns: symbol,exchange,currency,name,source).
-# No files / empty files = nothing can be bought (fail-closed).
-# US stocks/ETFs: exchange SMART, currency USD.
+# Only instruments in these CSV files may be traded
+# (columns: symbol,exchange,currency,name,sector,country,source; every field required, fail-closed).
+# exchange: SMART for US; SBF, AEB, IBIS, LSE or EBS (primary exchange, orders still route via SMART).
+# No files / empty files = nothing can be bought (fail-closed). Refresh: scripts/refresh_universe.py
 [universe]
 files = [
-  "config/universe/my_picks.csv",  # owner's own picks
-  "config/universe/top_sp500.csv",   # + 33 largest S&P 500 by market cap = 50. Refresh monthly: scripts/refresh_universe.py
+  "config/universe/us_core.csv",   # S&P 500 + Nasdaq-100 (CLAUDE.md §3)
+  "config/universe/eu_core.csv",   # STOXX 600 on SBF/AEB/IBIS/LSE/EBS
 ]
-# config/universe/qus_sp500.csv (full QUS / S&P 500 list) is kept for reference but not traded.
+hedge_files = ["config/universe/hedge.csv"]   # pocket C: IWDA (benchmark), CSPX, EXSA, short EUR bonds
+enable_hedge = false   # phase 1: hedge instruments are never shown to Claude and the gate blocks them

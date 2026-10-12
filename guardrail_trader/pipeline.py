@@ -129,6 +129,13 @@ def run_once(broker, market, j: Journal, cfg: RiskConfig, llm: LLMSetup, *, mode
             log("Unexpected open orders at IBKR. Not trading; needs a human.")
             return 3
 
+        # Empty allowlist (fail-closed universe, e.g. before the first refresh): nothing to price or buy.
+        # Not a gateway problem, so not rc 2 (which the scheduler retries and the watchdog counts).
+        if not cfg.universe and not mine:
+            j.finish_run(run_id, "empty_universe", notes="no instrument in the universe files")
+            log("Universe is empty (fail-closed): nothing can be bought. Run scripts/refresh_universe.py.")
+            return 0
+
         # 2. Prices + FX
         try:
             # The base currency is always present: commissions can be reported in it.

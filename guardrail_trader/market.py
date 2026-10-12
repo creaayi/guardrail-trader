@@ -6,9 +6,7 @@ import time
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from ib_async import Stock
-
-from guardrail_trader.broker.ibkr import IBKRBroker, _num
+from guardrail_trader.broker.ibkr import IBKRBroker, _num, stock_contract, to_major
 from guardrail_trader.risk.config import Instrument
 
 
@@ -42,7 +40,7 @@ def price_instruments(broker: IBKRBroker, insts: list[Instrument], batch: int = 
     out: dict[str, float] = {}
     for n in range(0, len(insts), batch):
         chunk = insts[n:n + batch]
-        contracts = [Stock(i.symbol, i.exchange, i.currency) for i in chunk]
+        contracts = [stock_contract(i.symbol, i.exchange, i.currency) for i in chunk]
         broker.ib.qualifyContracts(*contracts)
         live = [(i, c, broker.ib.reqMktData(c)) for i, c in zip(chunk, contracts) if c.conId]
         deadline = time.monotonic() + wait_seconds
@@ -53,18 +51,19 @@ def price_instruments(broker: IBKRBroker, insts: list[Instrument], batch: int = 
         for i, c, t in live:
             broker.ib.cancelMktData(c)
             px = _num(t.marketPrice())
-            px = px if not math.isnan(px) else _num(t.close)
+            px = to_major(px if not math.isnan(px) else _num(t.close), broker.magnifier(c))  # GBX -> GBP
             if not math.isnan(px) and px > 0:
                 out[i.key] = px
     return out
 
 
 def daily_history(broker: IBKRBroker, inst: Instrument, months: int = 6) -> list[tuple[str, float]]:
-    """Daily closes, oldest first. IBKR pacing: keep this to a handful of calls per run."""
+    """Daily closes (currency units), oldest first. IBKR pacing: keep this to a handful of calls per run."""
     c = broker.stock(inst.symbol, inst.exchange, inst.currency)
     bars = broker.ib.reqHistoricalData(c, endDateTime="", durationStr=f"{months} M", barSizeSetting="1 day",
                                        whatToShow="TRADES", useRTH=True, formatDate=1, timeout=30)
-    return [(str(b.date), float(b.close)) for b in bars]
+    mag = broker.magnifier(c)
+    return [(str(b.date), to_major(float(b.close), mag)) for b in bars]
 
 
 def summarize_history(closes: list[tuple[str, float]]) -> dict:

@@ -68,6 +68,25 @@ def check_capital(net_liquidation: float, fx_to_base: float, required_base: floa
     return value
 
 
+def stock_contract(symbol: str, exchange: str = "SMART", currency: str = "USD") -> Stock:
+    """US: SMART. Europe: SMART routing with the primary exchange named (SBF, AEB, IBIS, LSE, EBS),
+    which also disambiguates a ticker listed on several exchanges."""
+    exchange = (exchange or "SMART").upper()
+    if exchange == "SMART":
+        return Stock(symbol.upper(), "SMART", currency.upper())
+    return Stock(symbol.upper(), "SMART", currency.upper(), primaryExchange=exchange)
+
+
+def to_major(price: float, magnifier: int) -> float:
+    """IBKR quote units -> currency units. LSE stocks quote in pence (GBX, priceMagnifier 100)."""
+    return price / magnifier if magnifier and magnifier > 1 else price
+
+
+def to_quote_units(price: float, magnifier: int) -> float:
+    """Currency units -> IBKR quote units, for limit and stop prices sent to IBKR."""
+    return round(price * magnifier, 6) if magnifier and magnifier > 1 else price
+
+
 def _num(x) -> float:
     try:
         v = float(x)
@@ -131,6 +150,7 @@ class IBKRBroker:
         self.readonly = readonly
         self.ib = IB()
         self.account_id: str | None = None
+        self._magnifiers: dict[int, int] = {}   # conId -> priceMagnifier (GBX = 100)
 
     # -- lifecycle ----------------------------------------------------------
     def connect(self) -> "IBKRBroker":
@@ -205,12 +225,29 @@ class IBKRBroker:
         ]
 
     def stock(self, symbol: str, exchange: str = "SMART", currency: str = "USD") -> Contract:
-        """Build and qualify a stock/ETF contract. e.g. ('AAPL','SMART','USD')."""
-        contract = Stock(symbol.upper(), exchange, currency)
+        """Build and qualify a stock/ETF contract. e.g. ('AAPL','SMART','USD'), ('SAP','IBIS','EUR')."""
+        contract = stock_contract(symbol, exchange, currency)
         qualified = [c for c in self.ib.qualifyContracts(contract) if c and c.conId]
         if not qualified:
             raise ValueError(f"Could not find contract {symbol} on {exchange} in {currency}.")
         return qualified[0]
+
+    def magnifier(self, contract: Contract) -> int:
+        """IBKR's priceMagnifier for a qualified contract (100 for LSE stocks quoted in pence).
+
+        Only GBP contracts are looked up (one contract-details request each, cached by conId); the
+        universe has no other currency quoted in minor units. Every price crossing this adapter is
+        converted, so the rest of the system only sees currency units (GBP, not pence).
+        """
+        if (getattr(contract, "secType", "STK") != "STK" or getattr(contract, "currency", "") != "GBP"
+                or not getattr(contract, "conId", 0)):
+            return 1   # FX pairs (e.g. EURGBP) and non-GBP stocks quote in currency units
+        if contract.conId not in self._magnifiers:
+            details = self.ib.reqContractDetails(contract)
+            if not details:
+                raise ValueError(f"No contract details for {contract.symbol}; price unit unknown.")
+            self._magnifiers[contract.conId] = int(details[0].priceMagnifier or 1)
+        return self._magnifiers[contract.conId]
 
     def quote(self, contract: Contract, wait_seconds: float = 5.0) -> Quote:
         ticker = self.ib.reqMktData(contract)
@@ -221,14 +258,15 @@ class IBKRBroker:
                 break
         self.ib.cancelMktData(contract)
 
-        price = _num(ticker.marketPrice())
-        close = _num(ticker.close)
+        mag = self.magnifier(contract)
+        price = to_major(_num(ticker.marketPrice()), mag)
+        close = to_major(_num(ticker.close), mag)
         return Quote(
             symbol=contract.symbol,
             currency=contract.currency,
             price=price if not math.isnan(price) else close,
-            bid=_num(ticker.bid),
-            ask=_num(ticker.ask),
+            bid=to_major(_num(ticker.bid), mag),
+            ask=to_major(_num(ticker.ask), mag),
             close=close,
             data_type=MARKET_DATA_TYPES.get(ticker.marketDataType, "unknown"),
         )
@@ -277,8 +315,10 @@ class IBKRBroker:
 
     def preview_order(self, contract: Contract, action: str, quantity: float,
                       limit_price: float | None = None) -> dict:
-        """IBKR 'what-if': estimated commission and margin impact, without placing anything."""
-        state = self.ib.whatIfOrder(contract, self._build_order(action, quantity, limit_price))
+        """IBKR 'what-if': estimated commission and margin impact, without placing anything.
+        limit_price in currency units (GBP for LSE), converted to IBKR quote units here."""
+        lmt = None if limit_price is None else to_quote_units(limit_price, self.magnifier(contract))
+        state = self.ib.whatIfOrder(contract, self._build_order(action, quantity, lmt))
         if not hasattr(state, "commission"):  # IBKR rejected the what-if (ib_async returns [])
             raise ValueError(f"IBKR rejected what-if for {quantity} {contract.symbol} (see IBKR error above)")
         return {
@@ -298,7 +338,8 @@ class IBKRBroker:
             raise BrokerSafetyError("Not connected.")
         check_account(self.cfg.mode, self.account_id)  # re-check at the last moment
 
-        trade = self.ib.placeOrder(contract, self._build_order(action, quantity, limit_price))
+        lmt = None if limit_price is None else to_quote_units(limit_price, self.magnifier(contract))
+        trade = self.ib.placeOrder(contract, self._build_order(action, quantity, lmt))
         deadline = time.monotonic() + wait_seconds
         while time.monotonic() < deadline and not trade.isDone():
             self.ib.sleep(0.5)
@@ -348,7 +389,8 @@ class IBKRBroker:
         if not trade.fills:
             return 0.0, math.nan, 0.0, ""
         qty = sum(f.execution.shares for f in trade.fills)
-        avg = sum(f.execution.shares * f.execution.price for f in trade.fills) / qty
+        avg = to_major(sum(f.execution.shares * f.execution.price for f in trade.fills) / qty,
+                       self.magnifier(trade.contract))
         comm = sum(_num(f.commissionReport.commission) for f in trade.fills
                    if f.commissionReport and not math.isnan(_num(f.commissionReport.commission)))
         ccy = next((f.commissionReport.currency for f in trade.fills if f.commissionReport), "")
@@ -364,9 +406,9 @@ class IBKRBroker:
         return next((t for t in self.ib.trades() if t.order.orderId == order_id), None)
 
     # -- helpers ------------------------------------------------------------
-    @staticmethod
-    def _to_result(trade) -> OrderResult:
+    def _to_result(self, trade) -> OrderResult:
         o, s = trade.order, trade.orderStatus
+        mag = self.magnifier(trade.contract)
         msgs = [e.message for e in trade.log if e.message]
         return OrderResult(
             order_id=o.orderId,
@@ -374,10 +416,10 @@ class IBKRBroker:
             action=o.action,
             quantity=float(o.totalQuantity),
             order_type=o.orderType,
-            limit_price=_num(o.lmtPrice) if o.orderType == "LMT" else None,
+            limit_price=to_major(_num(o.lmtPrice), mag) if o.orderType == "LMT" else None,
             status=s.status,
             filled=float(s.filled),
-            avg_fill_price=_num(s.avgFillPrice),
+            avg_fill_price=to_major(_num(s.avgFillPrice), mag),
             message=msgs[-1] if msgs else "",
         )
 
