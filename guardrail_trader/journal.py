@@ -12,6 +12,10 @@ Tables
   ledger     DEPOSIT / BUY / SELL cash movements in base currency (fills only)
   state      key/value: peak value, halted flag, drawdown tier (+ pause end, since)
   nav_daily  one value per Paris day (the day's last first-valuation), for the daily-loss halt and reports
+  stops          protective STP orders at IBKR, one active per held line, identified by permId (T5)
+  stop_history   every placement / raise / resize / cancel of a stop
+  stop_fills     stop executions already booked (by IBKR execId, so a fill is never booked twice)
+  closed_trades  one row per exit (stop, kill, voluntary sale): entry, exit, P&L net, motif (T5; T6 enriches)
 """
 from __future__ import annotations
 
@@ -53,6 +57,24 @@ CREATE TABLE IF NOT EXISTS ledger (
 );
 CREATE TABLE IF NOT EXISTS state (key TEXT PRIMARY KEY, value TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS nav_daily (date TEXT PRIMARY KEY, value_base REAL NOT NULL, ts TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS stops (
+  id INTEGER PRIMARY KEY, symbol TEXT NOT NULL, currency TEXT NOT NULL, perm_id INTEGER NOT NULL UNIQUE,
+  order_id INTEGER, quantity REAL NOT NULL, entry_price REAL, entry_date TEXT, atr_entry REAL,
+  stop_price REAL NOT NULL, status TEXT NOT NULL CHECK (status IN ('active','cancelled','filled','missing')),
+  created_at TEXT NOT NULL, updated_at TEXT NOT NULL, note TEXT
+);
+CREATE TABLE IF NOT EXISTS stop_history (
+  id INTEGER PRIMARY KEY, perm_id INTEGER NOT NULL, ts TEXT NOT NULL, stop_price REAL, quantity REAL, reason TEXT
+);
+CREATE TABLE IF NOT EXISTS stop_fills (
+  exec_id TEXT PRIMARY KEY, perm_id INTEGER NOT NULL, ts TEXT NOT NULL, shares REAL NOT NULL, price REAL NOT NULL,
+  commission REAL, commission_currency TEXT
+);
+CREATE TABLE IF NOT EXISTS closed_trades (
+  id INTEGER PRIMARY KEY, symbol TEXT NOT NULL, currency TEXT NOT NULL, entry_ts TEXT, exit_ts TEXT NOT NULL,
+  quantity REAL NOT NULL, entry_price REAL, exit_price REAL NOT NULL, pnl_net_base REAL, motif TEXT NOT NULL,
+  perm_id INTEGER, broker_order_id INTEGER
+);
 CREATE TABLE IF NOT EXISTS tier_log (
   id INTEGER PRIMARY KEY, ts TEXT NOT NULL, from_tier TEXT, to_tier TEXT NOT NULL, drawdown_pct REAL, pause_until TEXT
 );
@@ -240,6 +262,89 @@ class Journal:
                 "VALUES(?,?,?,?,?,?,?,?,?,?)",
                 (_now(), action, symbol.upper(), currency.upper(), quantity, price, commission,
                  fx_to_base, amount, broker_order_id))
+
+    def position_entry(self, key: str) -> tuple[str | None, float | None]:
+        """(timestamp the current position was opened, average BUY price in the instrument currency,
+        commission excluded) - the entry the stop rules refer to. (None, None) when flat."""
+        sym, ccy = key.split(":")
+        qty, cost, opened = 0.0, 0.0, None
+        for kind, q, px, ts in self.db.execute(
+                "SELECT kind, quantity, price, ts FROM ledger WHERE symbol=? AND currency=? AND kind IN ('BUY','SELL') "
+                "ORDER BY id", (sym, ccy)).fetchall():
+            if kind == "BUY":
+                if qty <= 1e-9:
+                    qty, cost, opened = 0.0, 0.0, ts
+                qty, cost = qty + q, cost + q * px
+            else:
+                cost = cost * max(qty - q, 0.0) / qty if qty > 1e-9 else 0.0
+                qty = max(qty - q, 0.0)
+        return (opened, cost / qty) if qty > 1e-9 else (None, None)
+
+    def book_sell(self, symbol: str, currency: str, quantity: float, price: float, commission: float,
+                  fx_to_base: float, motif: str, broker_order_id: int | None = None,
+                  perm_id: int | None = None) -> int:
+        """Book a SELL fill AND its closed-trade row (P&L net of both commissions, in base currency)."""
+        key = f"{symbol.upper()}:{currency.upper()}"
+        entry_ts, entry_px = self.position_entry(key)
+        cost_per_share = self.avg_costs().get(key, 0.0)          # base, BUY commission included
+        self.record_fill(symbol, currency, "SELL", quantity, price, commission, fx_to_base, broker_order_id)
+        proceeds = (quantity * price - commission) * fx_to_base
+        with self.db:
+            return self.db.execute(
+                "INSERT INTO closed_trades(symbol,currency,entry_ts,exit_ts,quantity,entry_price,exit_price,"
+                "pnl_net_base,motif,perm_id,broker_order_id) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+                (symbol.upper(), currency.upper(), entry_ts, _now(), quantity, entry_px, price,
+                 proceeds - cost_per_share * quantity, motif, perm_id, broker_order_id)).lastrowid
+
+    # -- protective stops (T5) ----------------------------------------------------
+    def add_stop(self, symbol: str, currency: str, perm_id: int, order_id: int, quantity: float, stop_price: float,
+                 entry_price: float | None, entry_date: str | None, atr: float | None, note: str = "") -> None:
+        with self.db:
+            self.db.execute(
+                "INSERT INTO stops(symbol,currency,perm_id,order_id,quantity,entry_price,entry_date,atr_entry,"
+                "stop_price,status,created_at,updated_at,note) VALUES(?,?,?,?,?,?,?,?,?,'active',?,?,?)",
+                (symbol.upper(), currency.upper(), perm_id, order_id, quantity, entry_price, entry_date, atr,
+                 stop_price, _now(), _now(), note))
+            self.db.execute("INSERT INTO stop_history(perm_id,ts,stop_price,quantity,reason) VALUES(?,?,?,?,?)",
+                            (perm_id, _now(), stop_price, quantity, f"placed {note}".strip()))
+
+    def update_stop(self, perm_id: int, reason: str, stop_price: float | None = None, quantity: float | None = None,
+                    status: str | None = None) -> None:
+        sets, args = ["updated_at=?"], [_now()]
+        for col, v in (("stop_price", stop_price), ("quantity", quantity), ("status", status)):
+            if v is not None:
+                sets.append(f"{col}=?")
+                args.append(v)
+        with self.db:
+            self.db.execute(f"UPDATE stops SET {', '.join(sets)} WHERE perm_id=?", (*args, perm_id))
+            self.db.execute("INSERT INTO stop_history(perm_id,ts,stop_price,quantity,reason) VALUES(?,?,?,?,?)",
+                            (perm_id, _now(), stop_price, quantity, reason + (f" -> {status}" if status else "")))
+
+    def active_stops(self) -> list[sqlite3.Row]:
+        return self.db.execute("SELECT * FROM stops WHERE status='active' ORDER BY id").fetchall()
+
+    def active_stop(self, key: str) -> sqlite3.Row | None:
+        sym, ccy = key.split(":")
+        return self.db.execute("SELECT * FROM stops WHERE status='active' AND symbol=? AND currency=? "
+                               "ORDER BY id DESC LIMIT 1", (sym, ccy)).fetchone()
+
+    def stop_filled_qty(self, perm_id: int) -> float:
+        return float(self.db.execute("SELECT COALESCE(SUM(shares),0) FROM stop_fills WHERE perm_id=?",
+                                     (perm_id,)).fetchone()[0])
+
+    def book_stop_fill(self, exec_id: str, perm_id: int, symbol: str, currency: str, shares: float, price: float,
+                       commission: float, commission_currency: str, commission_instr: float,
+                       fx_to_base: float) -> bool:
+        """Book one stop execution once (keyed by IBKR execId): ledger SELL + closed trade 'stop'.
+        commission_instr = the commission converted to the instrument currency. False if already booked."""
+        if self.db.execute("SELECT 1 FROM stop_fills WHERE exec_id=?", (exec_id,)).fetchone():
+            return False
+        with self.db:
+            self.db.execute("INSERT INTO stop_fills(exec_id,perm_id,ts,shares,price,commission,commission_currency) "
+                            "VALUES(?,?,?,?,?,?,?)", (exec_id, perm_id, _now(), shares, price, commission,
+                                                      commission_currency))
+        self.book_sell(symbol, currency, shares, price, commission_instr, fx_to_base, "stop", perm_id=perm_id)
+        return True
 
     # -- runs / proposals / orders -------------------------------------------
     def start_run(self, mode: str) -> int:

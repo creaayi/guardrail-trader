@@ -15,7 +15,7 @@ import math
 import time
 from dataclasses import dataclass
 
-from ib_async import IB, Contract, LimitOrder, MarketOrder, Stock
+from ib_async import IB, Contract, ExecutionFilter, LimitOrder, MarketOrder, Stock, StopOrder
 
 from guardrail_trader.config import LIVE_PORTS, MARKET_DATA_TYPES, PAPER_PORTS, IBKRConfig
 
@@ -88,6 +88,15 @@ def to_quote_units(price: float, magnifier: int) -> float:
     return round(price * magnifier, 6) if magnifier and magnifier > 1 else price
 
 
+def round_to_tick(price: float, tick: float, down: bool) -> float:
+    """Round a price (IBKR quote units) to the exchange's tick, down or up. tick <= 0: unchanged."""
+    if not tick or tick <= 0 or not math.isfinite(price):
+        return price
+    steps = price / tick
+    steps = math.floor(steps + 1e-9) if down else math.ceil(steps - 1e-9)
+    return round(steps * tick, 10)
+
+
 def _num(x) -> float:
     try:
         v = float(x)
@@ -142,6 +151,35 @@ class OrderResult:
     message: str = ""
 
 
+@dataclass
+class OpenOrder:
+    """Any order open at IBKR for this account, from any client (reconciliation)."""
+    perm_id: int
+    order_id: int
+    client_id: int
+    symbol: str
+    currency: str
+    action: str
+    order_type: str
+    quantity: float
+    stop_price: float | None   # currency units, STP only
+
+
+@dataclass
+class ExecFill:
+    """One execution of an order, for booking stop fills that happened between runs."""
+    exec_id: str
+    perm_id: int
+    symbol: str
+    currency: str
+    side: str          # "SLD" | "BOT"
+    shares: float
+    price: float       # currency units
+    commission: float
+    commission_currency: str
+    time: str
+
+
 # ---------------------------------------------------------------------------
 # The adapter
 # ---------------------------------------------------------------------------
@@ -152,6 +190,8 @@ class IBKRBroker:
         self.ib = IB()
         self.account_id: str | None = None
         self._magnifiers: dict[int, int] = {}   # conId -> priceMagnifier (GBX = 100)
+        self._details: dict[int, object] = {}   # conId -> ContractDetails
+        self._rules: dict[int, list] = {}       # marketRuleId -> price increments
 
     # -- lifecycle ----------------------------------------------------------
     def connect(self) -> "IBKRBroker":
@@ -250,6 +290,29 @@ class IBKRBroker:
             self._magnifiers[contract.conId] = int(details[0].priceMagnifier or 1)
         return self._magnifiers[contract.conId]
 
+    def tick_size(self, contract: Contract, quote_price: float) -> float:
+        """Price increment at this price (IBKR quote units). European exchanges use price-band tick
+        tables (MiFID II), so the market rule for the SMART route is used, else minTick, else 0."""
+        if not getattr(contract, "conId", 0):
+            return 0.0
+        if contract.conId not in self._details:
+            details = self.ib.reqContractDetails(contract)
+            self._details[contract.conId] = details[0] if details else None
+        d = self._details[contract.conId]
+        if d is None:
+            return 0.0
+        rule_ids = [r for r in str(getattr(d, "marketRuleIds", "") or "").split(",") if r]
+        exchanges = str(getattr(d, "validExchanges", "") or "").split(",")
+        if rule_ids:
+            rid = int(rule_ids[exchanges.index("SMART")] if "SMART" in exchanges and
+                      exchanges.index("SMART") < len(rule_ids) else rule_ids[0])
+            if rid not in self._rules:
+                self._rules[rid] = sorted(self.ib.reqMarketRule(rid) or [], key=lambda x: x.lowEdge)
+            steps = [x.increment for x in self._rules[rid] if x.lowEdge <= quote_price + 1e-12]
+            if steps:
+                return float(steps[-1])
+        return float(getattr(d, "minTick", 0.0) or 0.0)
+
     def quote(self, contract: Contract, wait_seconds: float = 5.0) -> Quote:
         ticker = self.ib.reqMktData(contract)
         deadline = time.monotonic() + wait_seconds
@@ -300,6 +363,106 @@ class IBKRBroker:
     def open_orders(self) -> list[OrderResult]:
         return [self._to_result(t) for t in self.ib.openTrades()]
 
+    def all_open_orders(self) -> list[OpenOrder]:
+        """Every open order on the account, whichever client placed it (reqAllOpenOrders):
+        reconciliation must see orders from other clients too, not only this session's."""
+        out = []
+        for t in self.ib.reqAllOpenOrders():
+            if t.orderStatus.status in ("Cancelled", "ApiCancelled", "Filled", "Inactive"):
+                continue
+            o, mag = t.order, self.magnifier(t.contract)
+            out.append(OpenOrder(int(o.permId), int(o.orderId), int(o.clientId), t.contract.symbol,
+                                 t.contract.currency, o.action, o.orderType, float(o.totalQuantity),
+                                 to_major(_num(o.auxPrice), mag) if o.orderType == "STP" else None))
+        return out
+
+    def executions(self, perm_ids: set[int]) -> list[ExecFill]:
+        """Executions IBKR still reports (current day only) for these orders, with commissions."""
+        out = []
+        fills = [f for f in self.ib.reqExecutions(ExecutionFilter()) if int(f.execution.permId) in perm_ids]
+        deadline = time.monotonic() + 10       # commission reports arrive after the executions
+        while time.monotonic() < deadline and not all(f.commissionReport and f.commissionReport.execId for f in fills):
+            self.ib.sleep(0.5)
+        for f in fills:
+            e = f.execution
+            cr = f.commissionReport
+            out.append(ExecFill(e.execId, int(e.permId), f.contract.symbol, f.contract.currency, e.side,
+                                float(e.shares), to_major(float(e.price), self.magnifier(f.contract)),
+                                _num(cr.commission) if cr and cr.execId else math.nan,
+                                cr.currency if cr else "", str(e.time)))
+        return out
+
+    # -- protective stops (T5): SELL STP GTC, identified by permId ------------
+    def _writable(self) -> None:
+        if self.readonly:
+            raise BrokerSafetyError("Broker is in read-only mode; orders are disabled.")
+        if self.account_id is None:
+            raise BrokerSafetyError("Not connected.")
+        check_account(self.cfg.mode, self.account_id)
+
+    def _stop_trade(self, perm_id: int):
+        return next((t for t in self.ib.reqAllOpenOrders() if int(t.order.permId) == perm_id), None)
+
+    def place_stop(self, contract: Contract, quantity: float, stop_price: float,
+                   wait_seconds: float = 10.0) -> OpenOrder:
+        """SELL STP GTC (regular hours). stop_price in currency units, rounded DOWN to the tick (a stop is
+        never set tighter than computed). Waits for IBKR's permId, which identifies it across sessions."""
+        self._writable()
+        if not quantity > 0 or not stop_price > 0:
+            raise ValueError(f"invalid stop {quantity} @ {stop_price}")
+        mag = self.magnifier(contract)
+        aux = to_quote_units(stop_price, mag)
+        aux = round_to_tick(aux, self.tick_size(contract, aux), down=True)
+        order = StopOrder("SELL", quantity, aux)
+        order.account, order.tif, order.outsideRth = self.account_id, "GTC", False
+        trade = self.ib.placeOrder(contract, order)
+        deadline = time.monotonic() + wait_seconds
+        while time.monotonic() < deadline and not trade.order.permId and not trade.isDone():
+            self.ib.sleep(0.5)
+        if not trade.order.permId or trade.orderStatus.status in ("Cancelled", "ApiCancelled", "Inactive"):
+            raise RuntimeError(f"stop for {contract.symbol} not accepted by IBKR: {trade.orderStatus.status} "
+                               f"{[e.message for e in trade.log if e.message][-1:]}")
+        return OpenOrder(int(trade.order.permId), int(trade.order.orderId), int(trade.order.clientId),
+                         contract.symbol, contract.currency, "SELL", "STP", float(quantity), to_major(aux, mag))
+
+    def modify_stop(self, perm_id: int, stop_price: float | None = None, quantity: float | None = None,
+                    never_below: float | None = None, wait_seconds: float = 10.0) -> tuple[str, float]:
+        """Change a stop's price (rounded down to the tick) and/or quantity. Returns (status, stop price in
+        currency units at IBKR). A price that would round below `never_below` is not sent (a stop is never
+        lowered). 'Filled' / 'NotOpen' mean it triggered or vanished first: the caller books or flags it."""
+        self._writable()
+        trade = self._stop_trade(perm_id)
+        if trade is None:
+            return "NotOpen", math.nan
+        o, mag = trade.order, self.magnifier(trade.contract)
+        if stop_price is not None:
+            aux = to_quote_units(stop_price, mag)
+            aux = round_to_tick(aux, self.tick_size(trade.contract, aux), down=True)
+            if never_below is not None and to_major(aux, mag) < never_below - 1e-9:
+                stop_price = None          # rounding would lower it: keep the current price
+            else:
+                o.auxPrice = aux
+        if stop_price is None and quantity is None:
+            return trade.orderStatus.status, to_major(_num(o.auxPrice), mag)
+        if quantity is not None:
+            o.totalQuantity = quantity
+        trade = self.ib.placeOrder(trade.contract, o)
+        self.ib.sleep(min(wait_seconds, 2.0))
+        return trade.orderStatus.status, to_major(_num(o.auxPrice), self.magnifier(trade.contract))
+
+    def cancel_stop(self, perm_id: int, wait_seconds: float = 30.0) -> str:
+        """Cancel and wait for a final state. 'Filled' (the stop triggered first) is a valid answer."""
+        self._writable()
+        trade = self._stop_trade(perm_id)
+        if trade is None:
+            return "NotOpen"
+        if not trade.isDone():
+            self.ib.cancelOrder(trade.order)
+            deadline = time.monotonic() + wait_seconds
+            while time.monotonic() < deadline and not trade.isDone():
+                self.ib.sleep(0.5)
+        return trade.orderStatus.status
+
     # -- writes (only reachable through the risk gate) -----------------------
     def _build_order(self, action: str, quantity: float, limit_price: float | None):
         action = action.upper()
@@ -339,7 +502,11 @@ class IBKRBroker:
             raise BrokerSafetyError("Not connected.")
         check_account(self.cfg.mode, self.account_id)  # re-check at the last moment
 
-        lmt = None if limit_price is None else to_quote_units(limit_price, self.magnifier(contract))
+        lmt = None
+        if limit_price is not None:
+            # Tick-conform, and never a worse price than the gate approved: BUY down, SELL up.
+            lmt = to_quote_units(limit_price, self.magnifier(contract))
+            lmt = round_to_tick(lmt, self.tick_size(contract, lmt), down=action.upper() == "BUY")
         trade = self.ib.placeOrder(contract, self._build_order(action, quantity, lmt))
         deadline = time.monotonic() + wait_seconds
         while time.monotonic() < deadline and not trade.isDone():

@@ -186,14 +186,14 @@ def test_add_business_days_skips_weekends():
     assert add_business_days(date(2026, 10, 12), 10) == date(2026, 10, 26)   # Mon + 10 = Mon two weeks on
 
 
-def test_recently_stopped_without_closed_trades_is_empty(j):
+def test_recently_stopped_without_stop_exits_is_empty(j):
     assert j.recently_stopped(10) == {}
 
 
 def test_recently_stopped_lists_stops_inside_the_cooldown(j):
     from datetime import date
-    j.db.execute("CREATE TABLE closed_trades (symbol TEXT, currency TEXT, exit_ts TEXT, motif TEXT)")
-    j.db.executemany("INSERT INTO closed_trades VALUES (?,?,?,?)", [
+    j.db.executemany("INSERT INTO closed_trades(symbol,currency,exit_ts,motif,quantity,exit_price) "
+                     "VALUES (?,?,?,?,1,1)", [
         ("AAA", "USD", "2026-10-12T16:00:00+02:00", "stop"),
         ("BBB", "EUR", "2026-10-12T16:00:00+02:00", "objectif"),     # not a stop
         ("CCC", "EUR", "2026-09-01T10:00:00+02:00", "stop"),         # cooldown long over

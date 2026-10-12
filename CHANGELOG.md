@@ -106,6 +106,26 @@ T3 validée et mergée (PR #5), y compris l'interprétation de la taille minimal
 - `config.py` : le port hôte 14002 (gateway Docker paper) est reconnu comme port paper, 14001 comme son
   équivalent réel, refusé en mode paper.
 
+## 12/10/2026 — T5 (PR en attente de validation humaine) : stops de protection chez IBKR
+
+Nouvelles clés obligatoires (valeurs du §5) : `stop_atr_mult = 2`, `stop_min_pct = 6`, `stop_max_pct = 12`,
+`breakeven_atr_mult = 1`, `trail_atr_mult = 2` ; contrainte `stop_min < stop_max < max_drawdown`.
+Choix d'implémentation à valider :
+1. ATR14 indisponible (cache de barres vide ou trop vieux) : stop à la borne −12 %, signalé dans la note du stop.
+2. Un seul stop par ligne ; un renforcement porte le stop au plus haut de (stop actuel, stop initial de la
+   nouvelle tranche) — jamais abaissé.
+3. Exécutions de stop : IBKR ne les renvoie que pour le jour courant. Nouveau créneau `stops`
+   16:15–16:45 New York (après la clôture US, avant minuit à Paris), sans Claude, pour les enregistrer.
+   Si une exécution reste introuvable : run arrêté (`stop_sync_failed`, code 3) et saisie manuelle
+   `journal_cli.py book-stop-fill` depuis le relevé IBKR — rien n'est deviné.
+4. Un stop exécuté en partie pendant la préparation d'une vente arrête le run (code 3).
+5. Relèvement des stops au créneau de clôture uniquement (`--trail-stops`), après rafraîchissement des
+   barres des lignes détenues (~10,5 s par ligne pour le rythme IBKR).
+6. Ordres limites arrondis au pas de cotation, toujours dans le sens favorable (BUY vers le bas, SELL
+   vers le haut) ; stops arrondis vers le bas sans jamais redescendre sous le stop en place.
+7. Motif des ventes volontaires dans `closed_trades` : `non_precise` jusqu'à T6 ; `kill` pour le kill
+   switch ; `stop` pour les stops. Les ordres stop ne comptent pas dans `max_trades_per_month`.
+
 ## 13/10/2026 — Amendement : capital 800 000 → 950 000 EUR
 
 Décision humaine. Le compte paper est libellé en EUR et vaut 1 003 038 EUR (constaté au premier

@@ -43,6 +43,8 @@ Hard limits (code-enforced):
   (PAUSED), then BUYs at half the max size (RECOVERY) until the drawdown is back under {resume}%; at {reduce}%, no
   BUY while holdings exceed {reduce_eq}% of the portfolio (REDUCED), then RECOVERY. Nothing is sold by these tiers.
 - A day that loses more than {daily}% blocks every order the following day.
+- Every holding has a protective stop at IBKR placed and trailed by code (get_portfolio: protective_stop);
+  you do not place, move or cancel stops. A SELL you submit cancels or shrinks the stop first.
 - At most {trades} orders per calendar month ({used} already used this month).
 - Orders whose commission exceeds {comm}% of order value are rejected.
 - If the portfolio falls {dd}% below its peak, code sells everything and halts trading.
@@ -143,6 +145,7 @@ class TradingAgent:
                  cost_fn: Callable = _free, run_budget_usd: float = 0.50,
                  on_usage: Callable | None = None, recent_activity: list[dict] | None = None,
                  avg_costs: dict[str, float] | None = None, momentum: dict | None = None,
+                 stops: dict[str, float] | None = None,
                  max_seconds: float = MAX_SECONDS, request_timeout_s: float = 60.0,
                  clock: Callable[[], float] = time.monotonic):
         self.client, self.cfg, self.state, self.market = client, cfg, state, market
@@ -156,6 +159,7 @@ class TradingAgent:
         self.recent = recent_activity or []
         self.avg_costs = avg_costs or {}
         self.momentum = momentum
+        self.stops = stops or {}       # key -> protective stop price at IBKR (instrument currency)
         self.max_seconds, self.request_timeout_s, self.clock = max_seconds, request_timeout_s, clock
         half = state.tier == "RECOVERY"   # half-size BUYs (T4)
         self.max_pos_base = state.value_base * cfg.max_position_pct / (200 if half else 100)
@@ -278,6 +282,8 @@ class TradingAgent:
                "price": round(self.market.prices.get(key, float("nan")), 2),
                "value": round(value, 2),
                "weight_pct": round(value / total * 100, 2) if total else 0}
+        if key in self.stops:
+            row["protective_stop"] = self.stops[key]
         cost = self.avg_costs.get(key)
         if cost:
             row["avg_cost"] = round(cost, 2)

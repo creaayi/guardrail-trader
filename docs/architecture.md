@@ -95,7 +95,11 @@ is the same file in both modes.
 ## Data flow of one run
 
 1. **Broker ready?** the gateway must actually serve account data (a connected socket isn't enough).
-2. **Reconcile:** journal holdings must equal IBKR positions, with no stray open orders.
+2. **Stops:** book the protective-stop executions IBKR reports since the last run (current day only;
+   an evening slot at 16:15 New York catches the day's last ones).
+3. **Reconcile:** journal holdings must equal IBKR positions; the only open orders allowed are the
+   bot's own active stops (all clients, by permId). Every holding then gets a stop sized to it;
+   at the close slot, stops are trailed from fresh daily bars.
 3. **Price:** the whole universe plus FX to the base currency.
 4. **Kill switch:** if drawdown from peak ≥ the limit, sell everything and halt.
 5. **Claude:** the agent loop, only if the market is open and the monthly LLM cap has room.

@@ -117,6 +117,7 @@ break a limit that each order passes alone.
 | Max equity (cash ≥ the rest) | 90% | `max_equity_pct` |
 | No re-entry after a stop exit | 10 business days | `reentry_cooldown_days` |
 | Hedge instruments (pocket C) blocked | while `enable_hedge = false` | `[universe]` |
+| Protective stop on every holding: SELL STP GTC at entry − 2×ATR14, bounded [−12%, −6%]; to entry at +1×ATR, then 2×ATR under the highest close; never lowered; cancelled/shrunk before any SELL | always | `stop_*`, `breakeven_atr_mult`, `trail_atr_mult` |
 | Max orders per calendar month (Paris); once used up, runs skip Claude until the 1st | 60 | `max_trades_per_month` |
 | Drawdown −8%: PAUSED, no new BUY | 5 business days, then RECOVERY | `drawdown_pause_pct`, `drawdown_pause_days` |
 | RECOVERY: BUYs at half the max size | until the drawdown is back under 4% | `drawdown_resume_pct` |

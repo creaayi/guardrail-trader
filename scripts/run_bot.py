@@ -43,6 +43,8 @@ def main() -> int:
     ap.add_argument("--dry-run", action="store_true", help="no orders; read-only broker connection")
     ap.add_argument("--fake-claude", action="store_true", help="scripted agent, no API calls")
     ap.add_argument("--fill-timeout", type=float, default=120.0)
+    ap.add_argument("--trail-stops", action="store_true", help="refresh held lines' bars and raise trailing stops")
+    ap.add_argument("--stops-only", action="store_true", help="book stop fills, reconcile, place stops; no Claude")
     args = ap.parse_args()
 
     cfg = load_risk_config()
@@ -60,7 +62,8 @@ def main() -> int:
             return run_once(broker, IBKRMarketData(broker, cfg), j, cfg, llm_setup(args.fake_claude),
                             mode=mode, dry_run=args.dry_run, fill_timeout=args.fill_timeout, my_picks=picks,
                             web_search=os.getenv("ENABLE_WEB_SEARCH", "0") == "1", log=log,
-                            bars=bars, momentum_cfg=load_momentum_config())
+                            bars=bars, momentum_cfg=load_momentum_config(),
+                            trail_stops=args.trail_stops, stops_only=args.stops_only)
     finally:
         bars.close()
         j.close()

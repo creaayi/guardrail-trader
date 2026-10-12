@@ -1,8 +1,10 @@
 """Unattended scheduler entry point. launchd calls this every 15 minutes; it decides.
 
-Slots are defined in New York time, so US and Sydney daylight-saving changes need no edits:
+Slots are defined in New York time, so daylight-saving changes need no edits:
   slot "open"  10:30-11:30 ET   (1h after the open, prices settled)
-  slot "close" 15:00-15:40 ET   (before the 16:00 close; run_bot needs >=15 min left)
+  slot "close" 15:00-15:40 ET   (before the 16:00 close; run_bot needs >=15 min left) + trailing stops
+  slot "stops" 16:15-16:45 ET   (after the US close, before midnight in Paris): books the day's stop
+                                 executions while IBKR still reports them (current day only), no Claude
 
 Per slot per day: at most MAX_ATTEMPTS tries (e.g. if IB Gateway is briefly down),
 and never two runs at once (file lock). Weekends are skipped here; holidays are caught
@@ -23,7 +25,9 @@ STATE = ROOT / "data" / "scheduler_state.json"
 LOCK = ROOT / "data" / "scheduler.lock"
 LOGS = ROOT / "logs"
 NY = ZoneInfo("America/New_York")
-SLOTS = {"open": (time(10, 30), time(11, 30)), "close": (time(15, 0), time(15, 40))}
+SLOTS = {"open": (time(10, 30), time(11, 30)), "close": (time(15, 0), time(15, 40)),
+         "stops": (time(16, 15), time(16, 45))}
+SLOT_ARGS = {"close": ["--trail-stops"], "stops": ["--stops-only"]}
 MAX_ATTEMPTS = 3
 DONE_CODES = (0, 3)   # 0 = ran / market closed / halted; 3 = reconcile failed (needs a human)
 
@@ -89,7 +93,7 @@ def main(argv: list[str]) -> int:
         LOGS.mkdir(exist_ok=True)
         log_path = LOGS / f"run_{now_ny:%Y%m%d}_{slot}_{entry['attempts']}.log"
         with open(log_path, "w") as log:
-            rc = subprocess.run([sys.executable, str(ROOT / "scripts" / "run_bot.py")],
+            rc = subprocess.run([sys.executable, str(ROOT / "scripts" / "run_bot.py"), *SLOT_ARGS.get(slot, [])],
                                 cwd=ROOT, stdout=log, stderr=subprocess.STDOUT, timeout=1800).returncode
         entry["done"] = slot_done(rc)
         entry["last_rc"] = rc
