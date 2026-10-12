@@ -118,7 +118,11 @@ break a limit that each order passes alone.
 | No re-entry after a stop exit | 10 business days | `reentry_cooldown_days` |
 | Hedge instruments (pocket C) blocked | while `enable_hedge = false` | `[universe]` |
 | Max orders per calendar month (Paris); once used up, runs skip Claude until the 1st | 60 | `max_trades_per_month` |
-| Kill switch: drawdown from peak | 25% → sell all, halt until manual reset; holdings left unsold (market closed) are sold at the next open run | `max_drawdown_pct` |
+| Drawdown −8%: PAUSED, no new BUY | 5 business days, then RECOVERY | `drawdown_pause_pct`, `drawdown_pause_days` |
+| RECOVERY: BUYs at half the max size | until the drawdown is back under 4% | `drawdown_resume_pct` |
+| Drawdown −12%: REDUCED, no BUY while equity > 50% (no forced sale) | then RECOVERY | `drawdown_reduce_pct`, `reduce_max_equity_pct` |
+| A day's loss > 3% (close to close): no order the next day, except stops | 3% | `daily_loss_halt_pct` |
+| Kill switch: drawdown from peak | 15% → sell all, halt until manual reset; holdings left unsold (market closed) are sold at the next open run | `max_drawdown_pct` |
 | Limit price within ± of reference | 0.5% | `max_price_deviation_pct` |
 | Commission ≤ share of order value | 1% | `max_commission_pct` |
 | Whole shares only | on | `allow_fractional` |

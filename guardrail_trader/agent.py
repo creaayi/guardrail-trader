@@ -39,6 +39,10 @@ Hard limits (code-enforced):
 - Per sector (list_universe `sector`) at most {sector}% of portfolio value; US holdings at most {us}%; all holdings
   at most {equity}% (at least {cash}% stays in cash).
 - No BUY of an instrument within {cooldown} business days after its protective stop was hit.
+- Drawdown tiers (get_portfolio shows `risk_tier`): at {pause}% below peak, no new BUY for {pause_days} business days
+  (PAUSED), then BUYs at half the max size (RECOVERY) until the drawdown is back under {resume}%; at {reduce}%, no
+  BUY while holdings exceed {reduce_eq}% of the portfolio (REDUCED), then RECOVERY. Nothing is sold by these tiers.
+- A day that loses more than {daily}% blocks every order the following day.
 - At most {trades} orders per calendar month ({used} already used this month).
 - Orders whose commission exceeds {comm}% of order value are rejected.
 - If the portfolio falls {dd}% below its peak, code sells everything and halts trading.
@@ -153,7 +157,8 @@ class TradingAgent:
         self.avg_costs = avg_costs or {}
         self.momentum = momentum
         self.max_seconds, self.request_timeout_s, self.clock = max_seconds, request_timeout_s, clock
-        self.max_pos_base = state.value_base * cfg.max_position_pct / 100
+        half = state.tier == "RECOVERY"   # half-size BUYs (T4)
+        self.max_pos_base = state.value_base * cfg.max_position_pct / (200 if half else 100)
 
     # ---------------------------------------------------------------- loop
     def run(self, task: str = "Run today's portfolio review and decide what to do.") -> AgentResult:
@@ -163,6 +168,9 @@ class TradingAgent:
                                       comm=c.max_commission_pct, dd=c.max_drawdown_pct, minpos=c.min_position_pct,
                                       sector=c.max_sector_pct, us=c.max_us_pct, equity=c.max_equity_pct,
                                       cash=round(100 - c.max_equity_pct, 2), cooldown=c.reentry_cooldown_days,
+                                      pause=c.drawdown_pause_pct, pause_days=c.drawdown_pause_days,
+                                      resume=c.drawdown_resume_pct, reduce=c.drawdown_reduce_pct,
+                                      reduce_eq=c.reduce_max_equity_pct, daily=c.daily_loss_halt_pct,
                                       hist=MAX_HISTORY_CALLS, checks=MAX_CHECK_CALLS)
         # Prompt caching: system + tools are identical every turn; the conversation prefix grows.
         # Cached input is billed at 10% of the normal price.
@@ -249,6 +257,8 @@ class TradingAgent:
             "max_value_per_holding": round(self.max_pos_base, 2),
             "holdings": [self._holding_row(k, h, v) for k, h in s.holdings.items()],
             "exposure_pct": self._exposure_pct(),
+            "risk_tier": s.tier, "no_buy_until_after": s.pause_until,
+            "max_position_pct_now": self.cfg.max_position_pct / 2 if s.tier == "RECOVERY" else self.cfg.max_position_pct,
             "reentry_blocked_until": s.recently_stopped,
             "recent_activity": self.recent,
         })

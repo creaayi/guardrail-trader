@@ -84,3 +84,16 @@ T3 validée et mergée (PR #5), y compris l'interprétation de la taille minimal
    close × volume en USD (US) / EUR (EU), calculée depuis le cache de barres IBKR : au rafraîchissement de
    l'univers (`refresh_universe.py` remplit le cache) et à chaque classement (titre exclu et compté).
 4. `max_atr_pct = 6.0` et `max_age_days = 10` confirmés.
+
+## 12/10/2026 — T4 (PR en attente de validation humaine) : paliers de drawdown et perte journalière
+
+- `max_drawdown_pct` 25 → **15** (resserrement, CLAUDE.md §4) ; kill switch inchangé par ailleurs.
+- Nouvelles clés obligatoires, contrainte `resume < pause < reduce < max_drawdown` :
+  `drawdown_pause_pct = 8`, `drawdown_pause_days = 5`, `drawdown_reduce_pct = 12`,
+  `reduce_max_equity_pct = 50`, `drawdown_resume_pct = 4`, `daily_loss_halt_pct = 3`.
+  Les valeurs 5 jours et 50 % viennent du texte de §4 ; 4 % de la décision 5.
+- `min_position_pct` doit rester sous la moitié de `max_position_pct` (achats à demi-taille).
+- Interprétations à valider : un palier RECOVERY ne repasse jamais en PAUSED (une aggravation est
+  traitée par REDUCED puis par le kill switch) ; la perte journalière compare les deux dernières NAV
+  quotidiennes avant aujourd'hui (dernière valorisation de chaque jour, heure de Paris) et bloque
+  aussi les ventes de Claude ce jour-là ; le kill switch reste prioritaire.

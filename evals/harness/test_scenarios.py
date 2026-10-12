@@ -408,3 +408,42 @@ def test_topup_the_account_cannot_back_is_stopped_by_the_account_guard(tmp_path)
     bot.j.topup_to(10000.0, "AUD")                   # ledger says 10,000; the account still holds 5,000
     out = bot.run(submits(order("CCC", 60)))
     assert out.status == "capital_guard" and bot.broker.orders == {}
+
+
+# ------------------------------------------------------------------ drawdown tiers (T4)
+def _tiered():
+    from dataclasses import replace
+    from evals.sim import CFG
+    return replace(CFG, drawdown_pause_pct=8.0, drawdown_pause_days=5, drawdown_reduce_pct=12.0,
+                   reduce_max_equity_pct=50.0, drawdown_resume_pct=4.0, daily_loss_halt_pct=3.0)
+
+
+def test_a_drawdown_past_the_pause_tier_blocks_new_buys(tmp_path):
+    """Invariant: at -8% the code, not Claude, stops new entries; the tier is journaled."""
+    from datetime import datetime
+    bot = Bot(tmp_path, cfg=_tiered(), holdings=HELD)
+    down = {"AAA:USD": 80.0, "BBB:USD": 43.0, "CCC:USD": 20.0}   # ~-9% from the 5,000 peak
+    out = bot.run(submits(order("CCC", 1)), market=SimMarket(prices=down), now=datetime(2026, 10, 12, 11, 0))
+    assert out.status == "ok" and bot.broker.orders == {}
+    assert bot.j.tier() == ("PAUSED", "2026-10-19")
+    assert any("DRAWDOWN TIER NORMAL -> PAUSED" in m for m in out.logs)
+    reasons = bot.j.db.execute("SELECT block_reasons FROM proposals").fetchone()[0]
+    assert "drawdown pause" in reasons
+
+
+def test_a_bad_day_halts_the_next_day_without_calling_claude(tmp_path):
+    from datetime import date, datetime
+    bot = Bot(tmp_path, cfg=_tiered())
+    bot.j.record_nav(5000.0, date(2026, 10, 9))
+    bot.j.record_nav(4800.0, date(2026, 10, 12))                  # Monday lost 4%
+    out = bot.run(submits(order("CCC", 1)), now=datetime(2026, 10, 13, 11, 0))
+    assert out.status == "daily_loss_halt" and out.llm_calls == 0 and bot.broker.orders == {}
+
+
+def test_the_kill_switch_still_liquidates_on_a_daily_halt_day(tmp_path):
+    from datetime import date, datetime
+    bot = Bot(tmp_path, cfg=_tiered(), holdings=HELD)
+    bot.j.record_nav(5000.0, date(2026, 10, 9))
+    bot.j.record_nav(4800.0, date(2026, 10, 12))
+    out = bot.run(market=SimMarket(prices=CRASH), now=datetime(2026, 10, 13, 11, 0))
+    assert out.status == "kill_switch" and {o.action for o in bot.broker.orders.values()} == {"SELL"}

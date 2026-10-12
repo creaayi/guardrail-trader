@@ -147,7 +147,9 @@ def test_input_state_not_mutated():
 
 def test_shipped_config_loads_and_is_fail_closed():
     c = load_risk_config()
-    assert (c.max_position_pct, c.max_trades_per_month, c.max_drawdown_pct) == (2.0, 60, 25.0)
+    assert (c.max_position_pct, c.max_trades_per_month, c.max_drawdown_pct) == (2.0, 60, 15.0)
+    assert (c.drawdown_resume_pct, c.drawdown_pause_pct, c.drawdown_pause_days, c.drawdown_reduce_pct,
+            c.reduce_max_equity_pct, c.daily_loss_halt_pct) == (4.0, 8.0, 5, 12.0, 50.0, 3.0)
     assert (c.max_price_deviation_pct, c.max_commission_pct) == (0.5, 1.0)
     assert (c.min_position_pct, c.max_sector_pct, c.max_us_pct, c.max_equity_pct, c.reentry_cooldown_days) == \
         (0.5, 20.0, 70.0, 90.0, 10)

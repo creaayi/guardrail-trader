@@ -2,6 +2,9 @@
 
 Pure functions only - no broker, no network, no clock - so every rule is unit-testable.
 
+Drawdown tiers (T4): next_tier() moves NORMAL -> PAUSED -> RECOVERY -> NORMAL, and any tier ->
+REDUCED; the journal stores the tier, the gate applies it to BUYs. The kill switch is separate.
+
 Hard rules (not configurable):
   * BUY / SELL only, limit orders only (no market orders on delayed data)
   * no shorting  - can only sell what the virtual ledger holds
@@ -14,10 +17,49 @@ from __future__ import annotations
 import copy
 import math
 from dataclasses import dataclass, field
+from datetime import date, timedelta
 
 from guardrail_trader.risk.config import RiskConfig, instrument_key
 
 EPS = 1e-9
+
+NORMAL, PAUSED, RECOVERY, REDUCED = "NORMAL", "PAUSED", "RECOVERY", "REDUCED"
+
+
+def add_business_days(day: date, n: int) -> date:
+    """`n` Monday-Friday days after `day`. Exchange holidays are not skipped (a pause or cooldown can
+    end a day early around a holiday)."""
+    while n > 0:
+        day += timedelta(days=1)
+        if day.weekday() < 5:
+            n -= 1
+    return day
+
+
+def next_tier(tier: str, pause_until: str | None, drawdown_pct: float, today: date,
+              cfg: RiskConfig) -> tuple[str, str | None]:
+    """Drawdown tier for this run (CLAUDE.md §4, decisions of 12/10/2026). Returns (tier, pause_until).
+
+    * any tier, drawdown >= reduce          -> REDUCED (no BUY while equity > reduce_max_equity_pct)
+    * REDUCED, drawdown back under reduce   -> RECOVERY
+    * NORMAL, drawdown >= pause             -> PAUSED until pause_days business days after today
+    * PAUSED, pause over                    -> RECOVERY (half-size BUYs), whatever the drawdown
+    * RECOVERY, drawdown < resume           -> NORMAL
+    RECOVERY never re-pauses: a deeper fall is caught by REDUCED, then by the kill switch.
+    """
+    if drawdown_pct >= cfg.drawdown_reduce_pct - EPS:
+        return REDUCED, None
+    if tier == REDUCED:
+        tier = RECOVERY
+    if tier == PAUSED:
+        if pause_until and today <= date.fromisoformat(pause_until):
+            return PAUSED, pause_until
+        tier = RECOVERY
+    if tier == NORMAL and drawdown_pct >= cfg.drawdown_pause_pct - EPS:
+        return PAUSED, add_business_days(today, cfg.drawdown_pause_days).isoformat()
+    if tier == RECOVERY and drawdown_pct < cfg.drawdown_resume_pct:
+        return NORMAL, None
+    return tier, None
 
 
 @dataclass(frozen=True)
@@ -58,6 +100,9 @@ class PortfolioState:
     # instrument key -> last day (ISO date) of its re-entry cooldown after a stop exit; the journal
     # computes the business days, so the gate stays clock-free
     recently_stopped: dict[str, str] = field(default_factory=dict)
+    tier: str = NORMAL                 # drawdown tier for this run (see next_tier)
+    pause_until: str | None = None     # PAUSED: last day without BUYs
+    daily_halt: str = ""               # non-empty = yesterday's loss blocks every order today (the reason)
 
     @property
     def value_base(self) -> float:
@@ -122,6 +167,8 @@ def evaluate(
         global_block = "trading halted by kill switch - manual reset required"
     elif kill_switch_triggered(sim, cfg):
         global_block = f"drawdown {sim.drawdown_pct:.1f}% >= limit {cfg.max_drawdown_pct}% - kill switch"
+    elif sim.daily_halt:
+        global_block = sim.daily_halt
 
     for p in ordered:
         if global_block:
@@ -194,12 +241,18 @@ def _check(p: Proposal, sim: PortfolioState, market: dict[str, MarketInfo], cfg:
                 r.append(f"would leave a {left:.2f}% line (min {cfg.min_position_pct}%): sell all of it or less")
         return r
 
+    if sim.tier == PAUSED:
+        r.append(f"drawdown pause (>= {cfg.drawdown_pause_pct}%): no new BUY until after {sim.pause_until}")
+    max_pos = cfg.max_position_pct / 2 if sim.tier == RECOVERY else cfg.max_position_pct
+    max_eq = min(cfg.max_equity_pct, cfg.reduce_max_equity_pct) if sim.tier == REDUCED else cfg.max_equity_pct
+
     cost = notional + m.est_commission_base
     if cost > sim.cash_base + EPS:
         r.append(f"cost {cost:.2f} exceeds cash {sim.cash_base:.2f} (no margin)")
     pos_pct = pct((held + p.quantity) * px_base)
-    if pos_pct > cfg.max_position_pct + EPS:
-        r.append(f"position would be {pos_pct:.1f}% of portfolio (max {cfg.max_position_pct}%)")
+    if pos_pct > max_pos + EPS:
+        r.append(f"position would be {pos_pct:.1f}% of portfolio (max {max_pos:g}%"
+                 + (", half size in the RECOVERY tier)" if sim.tier == RECOVERY else ")"))
     if pos_pct < cfg.min_position_pct - EPS:
         r.append(f"position would be {pos_pct:.2f}% of portfolio (min {cfg.min_position_pct}%)")
 
@@ -218,8 +271,10 @@ def _check(p: Proposal, sim: PortfolioState, market: dict[str, MarketInfo], cfg:
         if us_pct > cfg.max_us_pct + EPS:
             r.append(f"US holdings would be {us_pct:.1f}% of portfolio (max {cfg.max_us_pct}%)")
     eq_pct = pct(ex["equity"] + added)
-    if eq_pct > cfg.max_equity_pct + EPS:
-        r.append(f"equity exposure would be {eq_pct:.1f}% of portfolio (max {cfg.max_equity_pct}%, rest stays cash)")
+    if eq_pct > max_eq + EPS:
+        r.append(f"equity exposure would be {eq_pct:.1f}% of portfolio (max {max_eq:g}%"
+                 + (f", REDUCED tier: drawdown >= {cfg.drawdown_reduce_pct}%)" if sim.tier == REDUCED
+                    else ", rest stays cash)"))
     return r
 
 

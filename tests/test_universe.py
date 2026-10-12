@@ -73,6 +73,12 @@ max_sector_pct = 100.0
 max_us_pct = 100.0
 max_equity_pct = 100.0
 reentry_cooldown_days = 10
+drawdown_pause_pct = 8.0
+drawdown_pause_days = 5
+drawdown_reduce_pct = 12.0
+reduce_max_equity_pct = 50.0
+drawdown_resume_pct = 4.0
+daily_loss_halt_pct = 3.0
 [universe]
 files = ["{tmp_path / 'core.csv'}"]
 hedge_files = ["{tmp_path / 'hedge.csv'}"]
