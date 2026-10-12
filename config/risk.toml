@@ -14,7 +14,15 @@ max_us_pct = 70.0               # holdings with country US
 max_equity_pct = 90.0           # all holdings: cash stays >= 10%
 reentry_cooldown_days = 10      # business days with no BUY of an instrument after its stop was hit
 max_trades_per_month = 60       # orders submitted per calendar month (Paris time); raised from 10 per CLAUDE.md §4
-max_drawdown_pct = 25.0         # kill switch: fall >= 25% from peak -> sell all, halt, manual reset
+max_drawdown_pct = 15.0         # kill switch: fall >= 15% from peak -> sell all, halt, manual reset
+# Drawdown tiers below the kill switch (CLAUDE.md §4, CHANGELOG 12/10/2026). Must satisfy
+# drawdown_resume_pct < drawdown_pause_pct < drawdown_reduce_pct < max_drawdown_pct.
+drawdown_pause_pct = 8.0        # NORMAL -> PAUSED: no BUY for drawdown_pause_days business days
+drawdown_pause_days = 5
+drawdown_reduce_pct = 12.0      # -> REDUCED: no BUY while equity > reduce_max_equity_pct; no forced sale (stops only)
+reduce_max_equity_pct = 50.0
+drawdown_resume_pct = 4.0       # after PAUSED or REDUCED: BUYs at half max_position_pct until drawdown < this
+daily_loss_halt_pct = 3.0       # a day's loss > 3% (close to close) blocks every order the next day, except stops
 max_price_deviation_pct = 0.5   # fat-finger guard: limit price must be within 0.5% of reference price
 max_commission_pct = 1.0        # block orders whose commission exceeds 1% of order value
 allow_fractional = false        # IBKR rejects fractional orders via API (error 10243, verified 2026-09-21)

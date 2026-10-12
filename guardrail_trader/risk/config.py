@@ -57,6 +57,13 @@ class RiskConfig:
     max_us_pct: float = 100.0           # holdings with country US
     max_equity_pct: float = 100.0       # all holdings (cash >= 100 - this)
     reentry_cooldown_days: int = 0      # business days without a BUY after a stop exit
+    # Drawdown tiers (T4). Same contract: required in risk.toml; these defaults switch them off.
+    drawdown_pause_pct: float = 100.0   # NORMAL -> PAUSED: no BUY for drawdown_pause_days
+    drawdown_pause_days: int = 0
+    drawdown_reduce_pct: float = 100.0  # any tier -> REDUCED: no BUY while equity > reduce_max_equity_pct
+    reduce_max_equity_pct: float = 100.0
+    drawdown_resume_pct: float = 0.0    # RECOVERY (half-size BUYs) back to NORMAL below this drawdown
+    daily_loss_halt_pct: float = 100.0  # a day's loss above this blocks every order the next day
 
 
 @dataclass(frozen=True)
@@ -93,6 +100,12 @@ def _pct(name: str, v, lo: float = 0.0, hi: float = 100.0) -> float:
     v = float(v)
     if not (lo < v <= hi):
         raise ValueError(f"{name} must be in ({lo}, {hi}], got {v}")
+    return v
+
+
+def _int(name: str, v, lo: int, hi: int) -> int:
+    if not (isinstance(v, int) and not isinstance(v, bool) and lo <= v <= hi):
+        raise ValueError(f"{name} must be an integer in [{lo}, {hi}], got {v!r}")
     return v
 
 
@@ -148,9 +161,20 @@ def load_risk_config(path: Path | str = DEFAULT_RISK_PATH) -> RiskConfig:
     min_pos = _pct("min_position_pct", lim["min_position_pct"])
     if min_pos >= max_pos:
         raise ValueError(f"min_position_pct {min_pos} must be below max_position_pct {max_pos}")
-    cooldown = lim["reentry_cooldown_days"]
-    if not (isinstance(cooldown, int) and not isinstance(cooldown, bool) and 0 <= cooldown <= 60):
-        raise ValueError(f"reentry_cooldown_days must be an integer in [0, 60], got {cooldown!r}")
+    cooldown = _int("reentry_cooldown_days", lim["reentry_cooldown_days"], 0, 60)
+    if min_pos >= max_pos / 2:
+        raise ValueError(f"min_position_pct {min_pos} must be below half of max_position_pct {max_pos} "
+                         "(half-size BUYs in the RECOVERY tier)")
+    max_dd = _pct("max_drawdown_pct", lim["max_drawdown_pct"])
+    resume, pause = _pct("drawdown_resume_pct", lim["drawdown_resume_pct"]), _pct("drawdown_pause_pct", lim["drawdown_pause_pct"])
+    reduce = _pct("drawdown_reduce_pct", lim["drawdown_reduce_pct"])
+    if not resume < pause < reduce < max_dd:
+        raise ValueError(f"drawdown tiers must satisfy resume {resume} < pause {pause} < reduce {reduce} "
+                         f"< max_drawdown {max_dd}")
+    max_eq = _pct("max_equity_pct", lim["max_equity_pct"])
+    reduce_eq = _pct("reduce_max_equity_pct", lim["reduce_max_equity_pct"])
+    if reduce_eq > max_eq:
+        raise ValueError(f"reduce_max_equity_pct {reduce_eq} must not exceed max_equity_pct {max_eq}")
 
     u = raw.get("universe", {})
     universe = _read_instruments(u.get("files", []))
@@ -169,7 +193,7 @@ def load_risk_config(path: Path | str = DEFAULT_RISK_PATH) -> RiskConfig:
         base_currency=b["currency"].upper(),
         max_position_pct=max_pos,
         max_trades_per_month=trades,
-        max_drawdown_pct=_pct("max_drawdown_pct", lim["max_drawdown_pct"]),
+        max_drawdown_pct=max_dd,
         max_price_deviation_pct=_pct("max_price_deviation_pct", lim["max_price_deviation_pct"], hi=20.0),
         max_commission_pct=_pct("max_commission_pct", lim["max_commission_pct"]),
         allow_fractional=bool(lim.get("allow_fractional", False)),
@@ -179,6 +203,12 @@ def load_risk_config(path: Path | str = DEFAULT_RISK_PATH) -> RiskConfig:
         min_position_pct=min_pos,
         max_sector_pct=_pct("max_sector_pct", lim["max_sector_pct"]),
         max_us_pct=_pct("max_us_pct", lim["max_us_pct"]),
-        max_equity_pct=_pct("max_equity_pct", lim["max_equity_pct"]),
+        max_equity_pct=max_eq,
         reentry_cooldown_days=cooldown,
+        drawdown_pause_pct=pause,
+        drawdown_pause_days=_int("drawdown_pause_days", lim["drawdown_pause_days"], 1, 30),
+        drawdown_reduce_pct=reduce,
+        reduce_max_equity_pct=reduce_eq,
+        drawdown_resume_pct=resume,
+        daily_loss_halt_pct=_pct("daily_loss_halt_pct", lim["daily_loss_halt_pct"]),
     )

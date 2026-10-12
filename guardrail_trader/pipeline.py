@@ -27,9 +27,11 @@ from guardrail_trader.risk import (
     Decision, MarketInfo, MomentumConfig, Proposal, RiskConfig, evaluate, instrument_key, kill_switch_triggered,
     liquidation_proposals,
 )
+from guardrail_trader.risk.gate import EPS, next_tier
 
 RUNS_DIR = PROJECT_ROOT / "data" / "runs"
 NY = ZoneInfo("America/New_York")
+PARIS = ZoneInfo("Europe/Paris")
 
 
 class IBKRMarketData:
@@ -161,6 +163,20 @@ def run_once(broker, market, j: Journal, cfg: RiskConfig, llm: LLMSetup, *, mode
         log(f"portfolio value {state.value_base:,.2f} cash {state.cash_base:,.2f} "
             f"drawdown {state.drawdown_pct:.2f}% orders this month {state.trades_this_month}")
 
+        # Daily NAV (the day's last run wins) and drawdown tier (T4). The gate applies both.
+        clock = now or datetime.now(NY)
+        today = (clock if clock.tzinfo else clock.replace(tzinfo=NY)).astimezone(PARIS).date()
+        j.record_nav(state.value_base, today)
+        prev_tier, prev_until = j.tier()
+        state.tier, state.pause_until = next_tier(prev_tier, prev_until, state.drawdown_pct, today, cfg)
+        if j.set_tier(state.tier, state.pause_until, state.drawdown_pct):
+            log(f"DRAWDOWN TIER {prev_tier} -> {state.tier} at drawdown {state.drawdown_pct:.2f}%"
+                + (f" (no BUY until after {state.pause_until})" if state.pause_until else ""))
+        loss = j.previous_day_loss_pct(today)
+        if loss is not None and loss > cfg.daily_loss_halt_pct + EPS:
+            state.daily_halt = (f"daily loss halt: the previous day lost {loss:.2f}% (> {cfg.daily_loss_halt_pct}%); "
+                                "no order today except protective stops")
+
         usd_open = market.market_open(now or datetime.now(NY))
 
         def liquidate() -> int:
@@ -210,6 +226,13 @@ def run_once(broker, market, j: Journal, cfg: RiskConfig, llm: LLMSetup, *, mode
             log(f"CAPITAL GUARD: {e} Not trading; needs a human.")
             return 3
         log(f"account {acct_base:,.2f} {cfg.base_currency} covers the bot's value {state.value_base:,.2f}")
+
+        # Daily loss halt: every order would be blocked today, so don't pay for Claude. Placed after the
+        # kill switch, which still liquidates; protective stops live at IBKR and are unaffected.
+        if state.daily_halt:
+            j.finish_run(run_id, "daily_loss_halt", state, state.daily_halt)
+            log(f"{state.daily_halt}. Skipping (no Claude call, no cost).")
+            return 0
 
         # Monthly order limit used up: every order Claude proposed would be blocked, so don't pay
         # for the call. The kill switch above is unaffected (liquidation bypasses this limit).

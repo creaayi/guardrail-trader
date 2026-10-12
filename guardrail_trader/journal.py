@@ -10,7 +10,8 @@ Tables
   proposals  every proposal Claude made + the gate's verdict and reasons
   orders     every order sent to the broker and its outcome
   ledger     DEPOSIT / BUY / SELL cash movements in base currency (fills only)
-  state      key/value: peak value, halted flag
+  state      key/value: peak value, halted flag, drawdown tier (+ pause end, since)
+  nav_daily  one value per Paris day (the day's last first-valuation), for the daily-loss halt and reports
 """
 from __future__ import annotations
 
@@ -21,7 +22,9 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from guardrail_trader.config import PROJECT_ROOT
-from guardrail_trader.risk.gate import Decision, Holding, PortfolioState
+from guardrail_trader.risk.gate import (  # noqa: F401  (add_business_days re-exported)
+    NORMAL, PAUSED, RECOVERY, REDUCED, Decision, Holding, PortfolioState, add_business_days,
+)
 
 DEFAULT_DB = PROJECT_ROOT / "data" / "journal.sqlite"
 TZ = ZoneInfo("Europe/Paris")   # timestamps; calendar months for the order and LLM limits
@@ -49,6 +52,10 @@ CREATE TABLE IF NOT EXISTS ledger (
   fx_to_base REAL, amount_base REAL NOT NULL, broker_order_id INTEGER
 );
 CREATE TABLE IF NOT EXISTS state (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS nav_daily (date TEXT PRIMARY KEY, value_base REAL NOT NULL, ts TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS tier_log (
+  id INTEGER PRIMARY KEY, ts TEXT NOT NULL, from_tier TEXT, to_tier TEXT NOT NULL, drawdown_pct REAL, pause_until TEXT
+);
 CREATE TABLE IF NOT EXISTS snapshots (
   run_id INTEGER NOT NULL REFERENCES runs(id), key TEXT NOT NULL, quantity REAL, price_base REAL,
   PRIMARY KEY (run_id, key)
@@ -63,15 +70,6 @@ CREATE TABLE IF NOT EXISTS llm_usage (
 
 STALE_RUN_MINUTES = 30  # well past AGENT_MAX_SECONDS + the fill wait
 
-
-def add_business_days(day: date, n: int) -> date:
-    """`n` Monday-Friday days after `day`. Exchange holidays are not skipped: the cooldown can end up to a
-    day or two early around a holiday, never late enough to matter for a 10-day rule."""
-    while n > 0:
-        day += timedelta(days=1)
-        if day.weekday() < 5:
-            n -= 1
-    return day
 
 
 def _now() -> str:
@@ -113,8 +111,47 @@ class Journal:
         """Manual re-arm by the operator. Peak resets to current value so drawdown starts at 0."""
         self._set("halted", "0")
         self._set("halted_reason", "")
+        self.set_tier(NORMAL, None, 0.0)
         self._set("peak_base", repr(peak_value_base))
         self._set("last_value_base", repr(peak_value_base))
+
+    # -- drawdown tiers and daily NAV (T4) ---------------------------------------
+    def tier(self) -> tuple[str, str | None]:
+        """(tier, pause_until). An unknown stored tier refuses (fail-closed) rather than guessing."""
+        t = self._get("tier", NORMAL)
+        if t not in (NORMAL, PAUSED, RECOVERY, REDUCED):
+            raise ValueError(f"unknown drawdown tier {t!r} in the journal state")
+        return t, (self._get("pause_until", "") or None)
+
+    def set_tier(self, tier: str, pause_until: str | None, drawdown_pct: float) -> bool:
+        """Store the tier; log the transition. Returns True if it changed."""
+        prev, prev_until = self.tier()
+        if (prev, prev_until) == (tier, pause_until):
+            return False
+        self._set("tier", tier)
+        self._set("pause_until", pause_until or "")
+        self._set("tier_since", _now())
+        with self.db:
+            self.db.execute("INSERT INTO tier_log(ts,from_tier,to_tier,drawdown_pct,pause_until) VALUES(?,?,?,?,?)",
+                            (_now(), prev, tier, drawdown_pct, pause_until))
+        return True
+
+    def record_nav(self, value_base: float, day: date | None = None) -> None:
+        """The day's NAV: every run's first valuation overwrites it, so the last run of the day wins."""
+        day = day or datetime.now(TZ).date()
+        with self.db:
+            self.db.execute("INSERT INTO nav_daily(date,value_base,ts) VALUES(?,?,?) ON CONFLICT(date) DO UPDATE "
+                            "SET value_base=excluded.value_base, ts=excluded.ts", (day.isoformat(), value_base, _now()))
+
+    def previous_day_loss_pct(self, today: date | None = None) -> float | None:
+        """Loss of the last completed day before `today`, close to close, in % (positive = loss).
+        None without two days of NAV (missing data is not a loss)."""
+        today = today or datetime.now(TZ).date()
+        rows = self.db.execute("SELECT value_base FROM nav_daily WHERE date < ? ORDER BY date DESC LIMIT 2",
+                               (today.isoformat(),)).fetchall()
+        if len(rows) < 2 or rows[1][0] <= 0:
+            return None
+        return (1 - rows[0][0] / rows[1][0]) * 100
 
     def peak(self) -> float:
         return float(self._get("peak_base", "0"))
