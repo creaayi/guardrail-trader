@@ -67,3 +67,20 @@ Valeurs de `CLAUDE.md` §4 appliquées dans `config/risk.toml` :
 - `max_drawdown_pct` reste à 25 jusqu'à T4 (passage à 15 avec les paliers).
 Interprétation à valider : le minimum de 0,5 % s'applique à la ligne après un BUY et à la ligne restante
 après une vente partielle ; une vente totale est toujours permise.
+
+## 12/10/2026 — Décisions humaines (suite de T3)
+
+T3 validée et mergée (PR #5), y compris l'interprétation de la taille minimale.
+
+
+1. **Garde-fou de valeur liquidative — correction de la décision 8** : « valeur liquidative ≥ capital »
+   uniquement à `journal_cli.py init`. À chaque run, la valeur liquidative (en EUR) est comparée à la
+   **valeur virtuelle courante du bot** (trésorerie du grand livre + positions), après le kill switch.
+   Motif : avec 1 M USD ≈ 855 k EUR, la comparaison au capital aurait arrêté le bot vers −7 %, avant les
+   paliers −8 / −12 %. `CLAUDE.md` §1 mis à jour.
+2. **Capitalisation** : en phase 1, l'appartenance à l'indice suffit ; la mention `cap unverified` reste
+   dans la colonne `source`.
+3. **Liquidité** : filtre ≥ 5 M obligatoire (`[momentum] min_traded_value = 5000000.0`), moyenne 20 jours
+   close × volume en USD (US) / EUR (EU), calculée depuis le cache de barres IBKR : au rafraîchissement de
+   l'univers (`refresh_universe.py` remplit le cache) et à chaque classement (titre exclu et compté).
+4. `max_atr_pct = 6.0` et `max_age_days = 10` confirmés.

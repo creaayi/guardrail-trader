@@ -198,16 +198,18 @@ def run_once(broker, market, j: Journal, cfg: RiskConfig, llm: LLMSetup, *, mode
             log("US market closed (or <15 min left). Skipping (no Claude call, no cost).")
             return 0
 
-        # Capital guard: the broker account must cover the virtual capital. Checked after the kill
-        # switch on purpose, so a forced liquidation is never blocked by it.
+        # Account guard: the broker account must cover the bot's CURRENT virtual value (ledger cash +
+        # holdings). Not the initial capital: the account falls with the bot's own losses, so comparing
+        # to capital would stop the bot before its drawdown tiers (CHANGELOG 12/10/2026). Checked after
+        # the kill switch on purpose, so a forced liquidation is never blocked by it.
         try:
             acct_fx = fx[snap.currency] if snap.currency in fx else market.fx_to_base(snap.currency)
-            acct_base = check_capital(snap.net_liquidation, acct_fx, cfg.capital, cfg.base_currency)
+            acct_base = check_capital(snap.net_liquidation, acct_fx, state.value_base, cfg.base_currency)
         except (BrokerSafetyError, MarketDataUnavailableError) as e:
             j.finish_run(run_id, "capital_guard", state, str(e))
             log(f"CAPITAL GUARD: {e} Not trading; needs a human.")
             return 3
-        log(f"account {acct_base:,.2f} {cfg.base_currency} covers capital {cfg.capital:,.2f}")
+        log(f"account {acct_base:,.2f} {cfg.base_currency} covers the bot's value {state.value_base:,.2f}")
 
         # Monthly order limit used up: every order Claude proposed would be blocked, so don't pay
         # for the call. The kill switch above is unaffected (liquidation bypasses this limit).
@@ -231,7 +233,7 @@ def run_once(broker, market, j: Journal, cfg: RiskConfig, llm: LLMSetup, *, mode
             log(f"LLM {llm.provider}/{llm.model}; spent this month US${spent:.2f} of US${cap:.2f}")
         momentum = None
         if bars is not None and momentum_cfg is not None:
-            ranking = rank(cfg.universe, bars.bars, momentum_cfg, (now or datetime.now(NY)).date())
+            ranking = rank(cfg.universe, bars.bars, momentum_cfg, (now or datetime.now(NY)).date(), fx)
             momentum = ranking.for_claude()
             log(f"momentum ranking as of {ranking.as_of or '-'}: {len(ranking.top)} ranked, excluded {ranking.excluded}")
         client = llm.make_client(market)

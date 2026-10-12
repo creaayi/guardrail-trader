@@ -8,8 +8,10 @@ Sources (public index constituents):
 IBKR (read-only connection, IB Gateway must be running):
   * contract resolution: US by symbol, EU by ISIN; only primary exchanges SBF, AEB, IBIS, LSE, EBS are kept;
   * sector = ContractDetails.industry: one classification for US and EU (max_sector_pct compares them);
-  * daily bars, 6 months: >= MIN_BARS bars (listed for 6 months or more) and 20-day average traded value
-    >= 5 M (USD for US, EUR for EU). Prices in pence (LSE) are converted with priceMagnifier.
+  * daily bars, 6 months, stored in the bar cache (data/bars.sqlite, pence converted with priceMagnifier):
+    >= MIN_BARS bars (listed for 6 months or more) and 20-day average traded value computed from the
+    cache >= [momentum] min_traded_value (5 M; USD for US, EUR for EU). The ranking re-applies the same
+    liquidity filter at every run.
   * market cap >= 2 bn: NO free source is reachable here. Index membership is used as the only proxy and
     every row says so in its `source` column ("cap unverified"). Missing data is flagged, never invented.
 
@@ -29,8 +31,9 @@ from dataclasses import dataclass, replace
 from datetime import date
 from pathlib import Path
 
+from guardrail_trader.bars import Bar, BarCache, avg_traded_value, from_ibkr
 from guardrail_trader.config import PROJECT_ROOT
-from guardrail_trader.risk.config import UNIVERSE_COLUMNS
+from guardrail_trader.risk.config import UNIVERSE_COLUMNS, instrument_key
 
 SP500_URL = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
 NDX_URL = "https://en.wikipedia.org/wiki/List_of_NASDAQ-100_companies"
@@ -48,7 +51,6 @@ ISIN_HOME = {"FR": "SBF", "NL": "AEB", "DE": "IBIS", "GB": "LSE", "CH": "EBS"}
 SAME_COMPANY = {"GOOG": "GOOGL", "FOX": "FOXA", "NWS": "NWSA"}   # keep one share class per company
 
 MIN_BARS = 120          # ~6 months of trading days
-MIN_ADV = 5_000_000.0   # 20-day average traded value, USD (US) / EUR (EU)
 MIN_ROWS = {"us": 400, "eu": 150}   # sanity: refuse to overwrite with a suspiciously short list
 CAP_NOTE = "cap unverified (index membership only)"
 
@@ -110,23 +112,15 @@ def choose_listing(details: list, hint: str):
     return None
 
 
-def avg_traded_value(bars: list, magnifier: int, fx: float, days: int = 20) -> float:
-    """Average close x volume over the last `days` bars, in the target currency."""
-    last = bars[-days:]
-    if not last:
-        return 0.0
-    return sum(float(b.close) * float(b.volume) for b in last) / len(last) / max(magnifier, 1) * fx
-
-
-def keep_or_reason(bars: list, magnifier: int, fx: float, industry: str) -> str:
-    """'' if the instrument passes CLAUDE.md §3 filters, else why not."""
+def keep_or_reason(bars: list[Bar], fx: float, industry: str, min_adv: float) -> str:
+    """'' if the instrument passes CLAUDE.md §3 filters, else why not. bars in currency units."""
     if not industry:
         return "no sector at IBKR"
     if len(bars) < MIN_BARS:
         return f"only {len(bars)} daily bars (< 6 months listed)"
-    adv = avg_traded_value(bars, magnifier, fx)
-    if adv < MIN_ADV:
-        return f"20-day traded value {adv:,.0f} < {MIN_ADV:,.0f}"
+    adv = avg_traded_value(bars) * fx
+    if adv < min_adv:
+        return f"20-day traded value {adv:,.0f} < {min_adv:,.0f}"
     return ""
 
 
@@ -142,24 +136,31 @@ def write_csv(path: Path, rows: list[list[str]], min_rows: int) -> None:
 
 
 # ------------------------------------------------------------------ IBKR
-def _bars(broker, contract, pace: float) -> list:
+def _bars(broker, contract, pace: float, cache: BarCache | None = None, key: str = "", magnifier: int = 1) -> list[Bar]:
+    """6 months of daily bars in currency units; stored in the bar cache when one is given."""
     time.sleep(pace)
-    return broker.ib.reqHistoricalData(contract, endDateTime="", durationStr="6 M", barSizeSetting="1 day",
-                                       whatToShow="TRADES", useRTH=True, formatDate=1, timeout=60) or []
+    raw = broker.ib.reqHistoricalData(contract, endDateTime="", durationStr="6 M", barSizeSetting="1 day",
+                                      whatToShow="TRADES", useRTH=True, formatDate=1, timeout=60) or []
+    bars = from_ibkr(raw, magnifier)
+    if cache is not None and bars:
+        cache.upsert(key, bars)
+        cache.mark(key, "ok")
+        return cache.bars(key)          # the filters read what the cache holds
+    return bars
 
 
 def check_volume_units(broker, pace: float) -> None:
     """AAPL trades > 1 bn USD a day. Far less means volumes come in lots, not shares: stop, don't guess."""
     from guardrail_trader.broker.ibkr import stock_contract
     c = broker.ib.qualifyContracts(stock_contract("AAPL", "SMART", "USD"))[0]
-    adv = avg_traded_value(_bars(broker, c, pace), 1, 1.0)
+    adv = avg_traded_value(_bars(broker, c, pace))
     if adv < 1e9:
         raise SystemExit(f"AAPL 20-day traded value {adv:,.0f} USD: IBKR volume units look wrong (lots?). "
                          "Check before trusting the 5 M filter.")
     print(f"volume units OK (AAPL 20-day traded value {adv:,.0f} USD)")
 
 
-def resolve_us(broker, cands: list[Candidate], pace: float, log) -> list[list[str]]:
+def resolve_us(broker, cands: list[Candidate], pace: float, log, cache: BarCache, min_adv: float) -> list[list[str]]:
     from guardrail_trader.broker.ibkr import stock_contract
     rows = []
     for n, c in enumerate(cands, 1):
@@ -168,7 +169,8 @@ def resolve_us(broker, cands: list[Candidate], pace: float, log) -> list[list[st
             log(f"US {c.symbol}: {len(details)} IBKR contracts, skipped")
             continue
         d = details[0]
-        why = keep_or_reason(_bars(broker, d.contract, pace), 1, 1.0, d.industry)
+        bars = _bars(broker, d.contract, pace, cache, instrument_key(c.symbol, "USD"))
+        why = keep_or_reason(bars, 1.0, d.industry, min_adv)
         if why:
             log(f"US {c.symbol}: excluded, {why}")
             continue
@@ -178,7 +180,7 @@ def resolve_us(broker, cands: list[Candidate], pace: float, log) -> list[list[st
     return rows
 
 
-def resolve_eu(broker, cands: list[Candidate], pace: float, log) -> list[list[str]]:
+def resolve_eu(broker, cands: list[Candidate], pace: float, log, cache: BarCache, min_adv: float) -> list[list[str]]:
     from ib_async import Stock
     fx = {}
     rows, seen = [], set()
@@ -198,7 +200,8 @@ def resolve_eu(broker, cands: list[Candidate], pace: float, log) -> list[list[st
         ccy = d.contract.currency
         if ccy not in fx:
             fx[ccy] = broker.fx_to_base(ccy, "EUR")
-        why = keep_or_reason(_bars(broker, d.contract, pace), int(d.priceMagnifier or 1), fx[ccy], d.industry)
+        bars = _bars(broker, d.contract, pace, cache, instrument_key(d.contract.symbol, ccy), int(d.priceMagnifier or 1))
+        why = keep_or_reason(bars, fx[ccy], d.industry, min_adv)
         if why:
             log(f"EU {d.contract.symbol} {c.name}: excluded, {why}")
             continue
@@ -215,6 +218,7 @@ def main() -> int:
 
     from guardrail_trader.broker import IBKRBroker
     from guardrail_trader.config import load_ibkr_config
+    from guardrail_trader.risk import load_momentum_config
 
     ap = argparse.ArgumentParser()
     ap.add_argument("--only", choices=["us", "eu"])
@@ -237,8 +241,10 @@ def main() -> int:
     with IBKRBroker(replace(ib_cfg, client_id=ib_cfg.client_id + 2), readonly=True) as broker:
         broker.ensure_ready()
         check_volume_units(broker, args.pace)
+        min_adv = load_momentum_config().min_traded_value
+        cache = BarCache()
         for market, cands in todo.items():
-            rows = (resolve_us if market == "us" else resolve_eu)(broker, cands, args.pace, log)
+            rows = (resolve_us if market == "us" else resolve_eu)(broker, cands, args.pace, log, cache, min_adv)
             out = US_OUT if market == "us" else EU_OUT
             log(f"{market}: {len(rows)} of {len(cands)} kept")
             if not args.dry_run:

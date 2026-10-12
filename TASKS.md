@@ -44,7 +44,7 @@ Mise à jour du 12/10/2026 : décisions de validation de T0 intégrées (voir `C
 - `risk/gate.py` → `_check()` : taille minimale, secteur, part US, part actions, cooldown après stop (lecture via `PortfolioState` enrichi : `sector_weights`, `us_weight`, `recently_stopped`).
 - Mettre `max_position_pct = 2.0`, `max_trades_per_month = 60`, `max_price_deviation_pct = 0.5`, `max_commission_pct = 1.0`.
 - Tests : un cas par règle, plus un cas « rafale d'ordres qui dépasse un secteur ensemble mais pas séparément ».
-- État au 12/10/2026 : PR ouverte, en attente de validation humaine. `max_drawdown_pct` reste à 25 jusqu'à T4. Le cooldown lit `closed_trades` (motif `stop`), table créée en T5 ; d'ici là, aucun titre n'est en cooldown.
+- État au 12/10/2026 : mergée (PR #5) après validation humaine. `max_drawdown_pct` reste à 25 jusqu'à T4. Le cooldown lit `closed_trades` (motif `stop`), table créée en T5 ; d'ici là, aucun titre n'est en cooldown.
 
 ## T4 — Paliers de drawdown et perte journalière
 - `risk/config.py` : `drawdown_pause_pct`, `drawdown_reduce_pct`, `daily_loss_halt_pct`, avec contrainte `pause < reduce < max_drawdown`.

@@ -56,7 +56,8 @@ def check_account(mode: str, account_id: str) -> None:
 
 
 def check_capital(net_liquidation: float, fx_to_base: float, required_base: float, base: str) -> float:
-    """The broker account must hold at least the bot's virtual capital, converted to the base currency.
+    """The broker account, converted to the base currency, must hold at least `required_base`:
+    the capital at `journal_cli.py init`, the bot's current virtual value at every run.
 
     The paper account is capped (1 M USD), so a virtual budget larger than what the account can pay
     for would let the bot "spend" money that isn't there. Returns the account value in base currency.

@@ -67,6 +67,7 @@ class MomentumConfig:
     skip_days: int = 21          # ~1 month excluded (short-term reversal)
     max_atr_pct: float = 6.0     # ATR14/price cap: above it a 2xATR stop is always clipped by the -12% floor
     max_age_days: int = 10       # cached history older than this (calendar days) is not used
+    min_traded_value: float = 5_000_000.0   # CLAUDE.md §3: 20-day average, USD for US stocks, base currency otherwise
 
 
 def load_momentum_config(path: Path | str = DEFAULT_RISK_PATH) -> MomentumConfig:
@@ -76,7 +77,9 @@ def load_momentum_config(path: Path | str = DEFAULT_RISK_PATH) -> MomentumConfig
         raise ValueError("[momentum] section missing in risk.toml")
     cfg = MomentumConfig(top_n=int(m["top_n"]), lookback_days=int(m["lookback_days"]), skip_days=int(m["skip_days"]),
                          max_atr_pct=_pct("max_atr_pct", m["max_atr_pct"], hi=20.0),
-                         max_age_days=int(m["max_age_days"]))
+                         max_age_days=int(m["max_age_days"]), min_traded_value=float(m["min_traded_value"]))
+    if not cfg.min_traded_value > 0:
+        raise ValueError(f"momentum.min_traded_value must be > 0, got {cfg.min_traded_value}")
     if not 1 <= cfg.top_n <= 100:
         raise ValueError(f"momentum.top_n must be in [1, 100], got {cfg.top_n}")
     if not 0 <= cfg.skip_days < cfg.lookback_days - 20 or not 60 <= cfg.lookback_days <= 260:

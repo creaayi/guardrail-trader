@@ -31,8 +31,9 @@ allow_fractional = false        # IBKR rejects fractional orders via the API
 
 - The budget is deposited into the journal's ledger once, by `scripts/journal_cli.py init`, so set
   `capital` and `currency` **before** you run `init`. `init` connects to IB Gateway (read-only) and refuses
-  if the account's net liquidation, converted to the base currency, is below `capital`; every run checks the
-  same (status `capital_guard`), after the kill switch so a forced liquidation is never blocked.
+  if the account's net liquidation, converted to the base currency, is below `capital`. Every run checks that
+  the account covers the bot's **current** virtual value (status `capital_guard`), after the kill switch so a
+  forced liquidation is never blocked: the bot's own losses lower both sides, so they never trip it.
 - To raise the budget later, raise `capital` and run `scripts/journal_cli.py topup` (a dry run that prints
   the difference), then `topup --confirm` to deposit it. It deposits `capital` minus what is already
   deposited, so running it twice deposits once. Deposits are append-only: lowering `capital` below the
@@ -83,7 +84,8 @@ market-cap filter has no free data source; the `source` column says `cap unverif
 
 `[momentum]` in `config/risk.toml` sets the ranking the code computes before each Claude call:
 return from `lookback_days` to `skip_days` trading days ago (6 months excluding the last month),
-instruments with ATR14/price above `max_atr_pct` excluded, top `top_n` sent to Claude with their
+instruments with ATR14/price above `max_atr_pct` or a 20-day average traded value below
+`min_traded_value` (USD for US stocks, EUR otherwise) excluded, top `top_n` sent to Claude with their
 scores. It reads `data/bars.sqlite`, filled at the weekend by `scripts/refresh_bars.py` (paced for
 IBKR's historical-data limits). Missing, short or stale history (`max_age_days`) excludes the
 instrument and is counted in the ranking Claude sees; nothing is filled in.

@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import date
 
-from guardrail_trader.bars import Bar
+from guardrail_trader.bars import Bar, avg_traded_value
 from guardrail_trader.risk.config import Instrument, MomentumConfig
 
 
@@ -43,8 +43,12 @@ class Ranking:
                 "excluded_counts": self.excluded}
 
 
-def rank(universe: dict[str, Instrument], bars_for, cfg: MomentumConfig, today: date) -> Ranking:
-    """bars_for(key) -> list[Bar] oldest first (e.g. BarCache.bars)."""
+def rank(universe: dict[str, Instrument], bars_for, cfg: MomentumConfig, today: date,
+         fx: dict[str, float]) -> Ranking:
+    """bars_for(key) -> list[Bar] oldest first (e.g. BarCache.bars); fx: currency -> base units per 1.
+
+    Liquidity (CLAUDE.md §3): 20-day average traded value >= min_traded_value, in USD for US stocks and
+    in the base currency for the others."""
     scored, excluded, as_of = [], {}, ""
 
     def skip(reason: str) -> None:
@@ -63,6 +67,15 @@ def rank(universe: dict[str, Instrument], bars_for, cfg: MomentumConfig, today: 
         if r is None or a is None:
             skip("history too short")
             continue
+        adv = avg_traded_value(b)
+        if not (inst.country == "US" and inst.currency == "USD"):
+            if inst.currency not in fx:
+                skip("no FX rate")
+                continue
+            adv *= fx[inst.currency]
+        if adv < cfg.min_traded_value:
+            skip(f"20-day traded value below {cfg.min_traded_value:,.0f}")
+            continue
         atr_pct = a / b[-1].close * 100
         if atr_pct > cfg.max_atr_pct:
             skip(f"ATR14/price above {cfg.max_atr_pct}%")
@@ -74,5 +87,6 @@ def rank(universe: dict[str, Instrument], bars_for, cfg: MomentumConfig, today: 
     scored.sort(key=lambda x: (-x["momentum_pct"], x["symbol"]))
     top = [{"rank": i, **row} for i, row in enumerate(scored[:cfg.top_n], start=1)]
     method = (f"return from {cfg.lookback_days} to {cfg.skip_days} trading days ago; excluded if ATR14/price "
-              f"> {cfg.max_atr_pct}% or history missing/short/older than {cfg.max_age_days} days")
+              f"> {cfg.max_atr_pct}%, 20-day traded value < {cfg.min_traded_value:,.0f}, "
+              f"or history missing/short/older than {cfg.max_age_days} days")
     return Ranking(as_of, method, top, excluded)
