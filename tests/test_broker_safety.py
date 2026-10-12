@@ -7,13 +7,13 @@ from guardrail_trader.broker import (
 from guardrail_trader.config import IBKRConfig
 
 
-@pytest.mark.parametrize("port", [4001, 7496, 4003])
+@pytest.mark.parametrize("port", [4001, 7496, 4003, 14001])
 def test_paper_mode_refuses_live_ports(port):
     with pytest.raises(BrokerSafetyError):
         check_endpoint("paper", port)
 
 
-@pytest.mark.parametrize("port", [4002, 7497, 4004])
+@pytest.mark.parametrize("port", [4002, 7497, 4004, 14002])
 def test_live_mode_refuses_paper_ports(port):
     with pytest.raises(BrokerSafetyError):
         check_endpoint("live", port)
@@ -22,6 +22,7 @@ def test_live_mode_refuses_paper_ports(port):
 def test_matching_ports_pass():
     check_endpoint("paper", 4002)
     check_endpoint("live", 4001)
+    check_endpoint("paper", 14002)     # docker host port used by scripts run on the VPS
 
 
 def test_paper_mode_refuses_live_account():

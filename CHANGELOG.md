@@ -97,3 +97,11 @@ T3 validée et mergée (PR #5), y compris l'interprétation de la taille minimal
   traitée par REDUCED puis par le kill switch) ; la perte journalière compare les deux dernières NAV
   quotidiennes avant aujourd'hui (dernière valorisation de chaque jour, heure de Paris) et bloque
   aussi les ventes de Claude ce jour-là ; le kill switch reste prioritaire.
+
+## 12/10/2026 — T4 validée (PR #7) et ports de l'hôte Docker
+
+- T4 validée et mergée ; interprétations acceptées : pas de retour en PAUSED depuis RECOVERY (relais par
+  REDUCED puis par le kill switch) ; perte journalière mesurée sur les deux dernières valorisations de fin
+  de journée, heure de Paris.
+- `config.py` : le port hôte 14002 (gateway Docker paper) est reconnu comme port paper, 14001 comme son
+  équivalent réel, refusé en mode paper.

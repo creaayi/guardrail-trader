@@ -53,7 +53,7 @@ Mise à jour du 12/10/2026 : décisions de validation de T0 intégrées (voir `C
 - Snapshot NAV quotidien (référence de la perte journalière) créé dès T4 ; T7 y ajoute le benchmark.
 - `journal.py` : table `state` pour mémoriser le palier courant et sa date ; `run_bot.py` step 3 étendu.
 - Tests : transitions entre paliers, sortie de pause après N jours, demi-taille puis taille normale, kill switch inchangé.
-- État au 12/10/2026 : PR ouverte, en attente de validation humaine. Tables `nav_daily` et `tier_log`, palier dans `state` ; transitions dans `risk/gate.py` → `next_tier()`.
+- État au 12/10/2026 : mergée (PR #7) après validation humaine. Tables `nav_daily` et `tier_log`, palier dans `state` ; transitions dans `risk/gate.py` → `next_tier()`.
 
 ## T5 — Stops de protection chez IBKR
 - `broker/ibkr.py` : `place_stop(contract, qty, stop_price)` (ordre STP GTC), `modify_stop(order_id, new_price)`, `cancel_stop`, `open_stop_orders()`. Identifiant stocké : `permId`. Ordres ouverts lus par `reqAllOpenOrders`. Prix de stop arrondis au pas de cotation du contrat.
