@@ -96,3 +96,19 @@ def test_order_schema_accepts_the_eur_universe_currencies():
     submit = next(t for t in TOOLS if t["name"] == "submit_orders")
     assert submit["input_schema"]["properties"]["orders"]["items"]["properties"]["currency"]["enum"] == \
         ["USD", "EUR", "GBP", "CHF"]
+
+
+def test_prompt_and_portfolio_show_the_t3_limits_and_exposures():
+    import json as _json
+    from dataclasses import replace
+
+    uni = {i.key: i for i in [Instrument("CSCO", "SMART", "USD", "Cisco", "Technology", "US"),
+                              Instrument("META", "SMART", "USD", "Meta", "Communications", "US")]}
+    c = replace(CFG, universe=uni, min_position_pct=0.5, max_sector_pct=20.0, max_us_pct=70.0, max_equity_pct=90.0,
+                reentry_cooldown_days=10)
+    state = PortfolioState(3600.0, holdings={"CSCO:USD": Holding(10, 140.0)}, peak_value_base=5000.0,
+                           recently_stopped={"META:USD": "2026-10-26"})
+    a = TradingAgent(FakeClaude(), c, state, StubMarket(), log=lambda *_: None)
+    p = _json.loads(a._portfolio({}))
+    assert p["exposure_pct"] == {"equity": 28.0, "us": 28.0, "sectors": {"Technology": 28.0}}
+    assert p["reentry_blocked_until"] == {"META:USD": "2026-10-26"}

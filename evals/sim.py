@@ -21,7 +21,7 @@ from guardrail_trader.risk import Instrument, Proposal, RiskConfig
 USD_AUD = 1.5
 UNIVERSE = {i.key: i for i in [Instrument("AAA", "SMART", "USD"), Instrument("BBB", "SMART", "USD"),
                                Instrument("CCC", "SMART", "USD")]}
-# Same limits as config/risk.toml
+# Scenario limits (the original project's; T3+ rules off). The shipped limits are tested in tests/test_risk_gate.py.
 CFG = RiskConfig(capital=5000.0, base_currency="AUD", max_position_pct=25.0, max_trades_per_month=10,
                  max_drawdown_pct=25.0, max_price_deviation_pct=2.0, max_commission_pct=10.0,
                  allow_fractional=False, universe=UNIVERSE)

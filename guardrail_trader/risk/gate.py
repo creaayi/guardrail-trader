@@ -55,6 +55,9 @@ class PortfolioState:
     peak_value_base: float = 0.0
     trades_this_month: int = 0
     halted: bool = False
+    # instrument key -> last day (ISO date) of its re-entry cooldown after a stop exit; the journal
+    # computes the business days, so the gate stays clock-free
+    recently_stopped: dict[str, str] = field(default_factory=dict)
 
     @property
     def value_base(self) -> float:
@@ -73,6 +76,26 @@ class Decision:
     reasons: list[str]           # why it was blocked (empty if approved)
     notional_base: float = 0.0
     commission_base: float = 0.0
+
+
+def _meta(key: str, cfg: RiskConfig):
+    """Instrument metadata for a key (universe or hedge); None for anything else."""
+    return cfg.universe.get(key) or cfg.hedge.get(key)
+
+
+def exposures(state: PortfolioState, cfg: RiskConfig) -> dict:
+    """Holdings value by sector, US and total equity, in base currency. A holding with unknown
+    metadata counts under sector '?' and as non-US; it still counts as equity."""
+    sectors: dict[str, float] = {}
+    us = equity = 0.0
+    for key, h in state.holdings.items():
+        v = h.quantity * h.price_base
+        inst = _meta(key, cfg)
+        sector = inst.sector if inst and inst.sector else "?"
+        sectors[sector] = sectors.get(sector, 0.0) + v
+        us += v if inst and inst.country == "US" else 0.0
+        equity += v
+    return {"sectors": sectors, "us": us, "equity": equity}
 
 
 def kill_switch_triggered(state: PortfolioState, cfg: RiskConfig) -> bool:
@@ -156,18 +179,47 @@ def _check(p: Proposal, sim: PortfolioState, market: dict[str, MarketInfo], cfg:
         r.append(f"commission is {comm_pct:.1f}% of order value (max {cfg.max_commission_pct}%)")
 
     held = sim.holdings.get(p.key, Holding(0.0, m.price * m.fx_to_base)).quantity
+    px_base = m.price * m.fx_to_base
+    value_after = sim.value_base - m.est_commission_base
+
+    def pct(v: float) -> float:
+        return v / value_after * 100 if value_after > 0 else float("inf")
+
     if action == "SELL":
         if p.quantity > held + EPS:
             r.append(f"cannot sell {p.quantity}, only {held} held (no shorting)")
-    else:
-        cost = notional + m.est_commission_base
-        if cost > sim.cash_base + EPS:
-            r.append(f"cost {cost:.2f} exceeds cash {sim.cash_base:.2f} (no margin)")
-        value_after = sim.value_base - m.est_commission_base
-        pos_after = (held + p.quantity) * m.price * m.fx_to_base
-        pos_pct = pos_after / value_after * 100 if value_after > 0 else float("inf")
-        if pos_pct > cfg.max_position_pct + EPS:
-            r.append(f"position would be {pos_pct:.1f}% of portfolio (max {cfg.max_position_pct}%)")
+        else:
+            left = pct((held - p.quantity) * px_base)
+            if held - p.quantity > EPS and left < cfg.min_position_pct - EPS:
+                r.append(f"would leave a {left:.2f}% line (min {cfg.min_position_pct}%): sell all of it or less")
+        return r
+
+    cost = notional + m.est_commission_base
+    if cost > sim.cash_base + EPS:
+        r.append(f"cost {cost:.2f} exceeds cash {sim.cash_base:.2f} (no margin)")
+    pos_pct = pct((held + p.quantity) * px_base)
+    if pos_pct > cfg.max_position_pct + EPS:
+        r.append(f"position would be {pos_pct:.1f}% of portfolio (max {cfg.max_position_pct}%)")
+    if pos_pct < cfg.min_position_pct - EPS:
+        r.append(f"position would be {pos_pct:.2f}% of portfolio (min {cfg.min_position_pct}%)")
+
+    until = sim.recently_stopped.get(p.key)
+    if until:
+        r.append(f"{p.key} was stopped out: no re-entry until after {until} ({cfg.reentry_cooldown_days} business days)")
+
+    added = p.quantity * px_base
+    ex, inst = exposures(sim, cfg), cfg.universe[p.key]
+    sector = inst.sector or "?"
+    sec_pct = pct(ex["sectors"].get(sector, 0.0) + added)
+    if sec_pct > cfg.max_sector_pct + EPS:
+        r.append(f"sector {sector} would be {sec_pct:.1f}% of portfolio (max {cfg.max_sector_pct}%)")
+    if inst.country == "US":
+        us_pct = pct(ex["us"] + added)
+        if us_pct > cfg.max_us_pct + EPS:
+            r.append(f"US holdings would be {us_pct:.1f}% of portfolio (max {cfg.max_us_pct}%)")
+    eq_pct = pct(ex["equity"] + added)
+    if eq_pct > cfg.max_equity_pct + EPS:
+        r.append(f"equity exposure would be {eq_pct:.1f}% of portfolio (max {cfg.max_equity_pct}%, rest stays cash)")
     return r
 
 

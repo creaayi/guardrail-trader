@@ -17,6 +17,7 @@ from typing import Callable, Protocol
 from guardrail_trader.risk import (
     Decision, MarketInfo, PortfolioState, Proposal, RiskConfig, evaluate,
 )
+from guardrail_trader.risk.gate import exposures
 
 MAX_TURNS = int(os.getenv("AGENT_MAX_TURNS", "20"))
 MAX_HISTORY_CALLS = 15   # IBKR historical-data pacing + cost control
@@ -33,7 +34,11 @@ them is rejected. Doing nothing is a valid and often correct decision.
 Hard limits (code-enforced):
 - Only instruments in the allowlist (see list_universe). Whole shares only. BUY or SELL only; no shorting, no margin.
 - Limit orders only; limit price must be within {dev}% of the current reference price.
-- No single holding above {pos}% of portfolio value.
+- No single holding above {pos}% of portfolio value; no line below {minpos}% (after a BUY, or left after a partial SELL;
+  selling a whole line is always allowed).
+- Per sector (list_universe `sector`) at most {sector}% of portfolio value; US holdings at most {us}%; all holdings
+  at most {equity}% (at least {cash}% stays in cash).
+- No BUY of an instrument within {cooldown} business days after its protective stop was hit.
 - At most {trades} orders per calendar month ({used} already used this month).
 - Orders whose commission exceeds {comm}% of order value are rejected.
 - If the portfolio falls {dd}% below its peak, code sells everything and halts trading.
@@ -155,7 +160,9 @@ class TradingAgent:
         c = self.cfg
         system = SYSTEM_PROMPT.format(base=c.base_currency, dev=c.max_price_deviation_pct, pos=c.max_position_pct,
                                       trades=c.max_trades_per_month, used=self.state.trades_this_month,
-                                      comm=c.max_commission_pct, dd=c.max_drawdown_pct,
+                                      comm=c.max_commission_pct, dd=c.max_drawdown_pct, minpos=c.min_position_pct,
+                                      sector=c.max_sector_pct, us=c.max_us_pct, equity=c.max_equity_pct,
+                                      cash=round(100 - c.max_equity_pct, 2), cooldown=c.reentry_cooldown_days,
                                       hist=MAX_HISTORY_CALLS, checks=MAX_CHECK_CALLS)
         # Prompt caching: system + tools are identical every turn; the conversation prefix grows.
         # Cached input is billed at 10% of the normal price.
@@ -241,8 +248,17 @@ class TradingAgent:
             "orders_used_this_month": s.trades_this_month, "orders_limit_per_month": self.cfg.max_trades_per_month,
             "max_value_per_holding": round(self.max_pos_base, 2),
             "holdings": [self._holding_row(k, h, v) for k, h in s.holdings.items()],
+            "exposure_pct": self._exposure_pct(),
+            "reentry_blocked_until": s.recently_stopped,
             "recent_activity": self.recent,
         })
+
+    def _exposure_pct(self) -> dict:
+        v = self.state.value_base
+        ex = exposures(self.state, self.cfg)
+        p = lambda x: round(x / v * 100, 2) if v else 0.0  # noqa: E731
+        return {"equity": p(ex["equity"]), "us": p(ex["us"]),
+                "sectors": {k: p(x) for k, x in sorted(ex["sectors"].items())}}
 
     def _holding_row(self, key: str, h, total: float) -> dict:
         """One holding as Claude sees it. avg_cost/P&L are in base currency, from the journal's ledger

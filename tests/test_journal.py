@@ -175,3 +175,31 @@ def test_orders_are_counted_by_paris_calendar_month(j):
     # 23:30 UTC on 31 Oct is already November in Paris; 22:30 UTC is still October
     assert j.orders_this_month(datetime(2026, 10, 31, 23, 30, tzinfo=timezone.utc)) == 2
     assert j.orders_this_month(datetime(2026, 10, 31, 22, 30, tzinfo=timezone.utc)) == 1
+
+
+# -- re-entry cooldown after a stop (T3; closed_trades arrives with T5) ----------------------
+def test_add_business_days_skips_weekends():
+    from datetime import date
+
+    from guardrail_trader.journal import add_business_days
+    assert add_business_days(date(2026, 10, 9), 1) == date(2026, 10, 12)     # Fri + 1 = Mon
+    assert add_business_days(date(2026, 10, 12), 10) == date(2026, 10, 26)   # Mon + 10 = Mon two weeks on
+
+
+def test_recently_stopped_without_closed_trades_is_empty(j):
+    assert j.recently_stopped(10) == {}
+
+
+def test_recently_stopped_lists_stops_inside_the_cooldown(j):
+    from datetime import date
+    j.db.execute("CREATE TABLE closed_trades (symbol TEXT, currency TEXT, exit_ts TEXT, motif TEXT)")
+    j.db.executemany("INSERT INTO closed_trades VALUES (?,?,?,?)", [
+        ("AAA", "USD", "2026-10-12T16:00:00+02:00", "stop"),
+        ("BBB", "EUR", "2026-10-12T16:00:00+02:00", "objectif"),     # not a stop
+        ("CCC", "EUR", "2026-09-01T10:00:00+02:00", "stop"),         # cooldown long over
+    ])
+    assert j.recently_stopped(10, today=date(2026, 10, 20)) == {"AAA:USD": "2026-10-26"}
+    assert j.recently_stopped(10, today=date(2026, 10, 27)) == {}
+    assert j.recently_stopped(0, today=date(2026, 10, 20)) == {}
+    s = j.portfolio_state({}, cooldown_days=10)
+    assert isinstance(s.recently_stopped, dict)

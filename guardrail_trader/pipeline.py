@@ -157,7 +157,7 @@ def run_once(broker, market, j: Journal, cfg: RiskConfig, llm: LLMSetup, *, mode
             log(f"No price for held {missing}; refusing to value portfolio.")
             return 1
         prices_base = {k: px * fx[cfg.universe[k].currency] for k, px in prices.items()}
-        state = j.portfolio_state({k: prices_base[k] for k in mine})
+        state = j.portfolio_state({k: prices_base[k] for k in mine}, cooldown_days=cfg.reentry_cooldown_days)
         log(f"portfolio value {state.value_base:,.2f} cash {state.cash_base:,.2f} "
             f"drawdown {state.drawdown_pct:.2f}% orders this month {state.trades_this_month}")
 

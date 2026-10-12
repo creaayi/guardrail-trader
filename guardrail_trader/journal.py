@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -62,6 +62,16 @@ CREATE TABLE IF NOT EXISTS llm_usage (
 
 
 STALE_RUN_MINUTES = 30  # well past AGENT_MAX_SECONDS + the fill wait
+
+
+def add_business_days(day: date, n: int) -> date:
+    """`n` Monday-Friday days after `day`. Exchange holidays are not skipped: the cooldown can end up to a
+    day or two early around a holiday, never late enough to matter for a 10-day rule."""
+    while n > 0:
+        day += timedelta(days=1)
+        if day.weekday() < 5:
+            n -= 1
+    return day
 
 
 def _now() -> str:
@@ -301,6 +311,23 @@ class Journal:
         return float(self.db.execute("SELECT COALESCE(SUM(cost_usd),0) FROM llm_usage WHERE substr(ts,1,7)=?",
                                      (month,)).fetchone()[0])
 
+    def recently_stopped(self, cooldown_days: int, today: date | None = None) -> dict[str, str]:
+        """Instrument key -> last day of its re-entry cooldown, for stop exits still inside it.
+
+        Reads closed trades with motif 'stop' (table created with the stops, T5); none yet = {}.
+        """
+        if cooldown_days <= 0 or not self.db.execute(
+                "SELECT 1 FROM sqlite_master WHERE type='table' AND name='closed_trades'").fetchone():
+            return {}
+        today = today or datetime.now(TZ).date()
+        out = {}
+        for sym, ccy, exit_ts in self.db.execute(
+                "SELECT symbol, currency, MAX(exit_ts) FROM closed_trades WHERE motif='stop' GROUP BY symbol, currency"):
+            until = add_business_days(datetime.fromisoformat(exit_ts).date(), cooldown_days)
+            if today <= until:
+                out[f"{sym}:{ccy}"] = until.isoformat()
+        return out
+
     # -- the view the gate needs ----------------------------------------------
     def avg_costs(self) -> dict[str, float]:
         """Average cost per share in base currency (incl. commission) for open positions."""
@@ -317,7 +344,8 @@ class Journal:
                 pos[k] = [q - sold, c * (q - sold) / q]
         return {k: c / q for k, (q, c) in pos.items() if q > 1e-9}
 
-    def portfolio_state(self, prices_base: dict[str, float], observe: bool = True) -> PortfolioState:
+    def portfolio_state(self, prices_base: dict[str, float], observe: bool = True,
+                        cooldown_days: int = 0) -> PortfolioState:
         """prices_base: instrument key -> current price in base currency (for every holding).
 
         observe=True: this is the run's valuation and feeds the confirmed peak (once per run).
@@ -329,7 +357,7 @@ class Journal:
             holdings[key] = Holding(qty, prices_base[key])
         state = PortfolioState(cash_base=self.cash_base(), holdings=holdings,
                                peak_value_base=self.peak(), trades_this_month=self.orders_this_month(),
-                               halted=self.is_halted())
+                               halted=self.is_halted(), recently_stopped=self.recently_stopped(cooldown_days))
         if observe:
             state.peak_value_base = self.observe_value(state.value_base)
         return state

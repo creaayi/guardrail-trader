@@ -50,6 +50,13 @@ class RiskConfig:
     # Pocket C instruments (hedge.csv). Never in `universe` and always blocked by the gate unless enabled.
     hedge: dict[str, Instrument] = field(default_factory=dict)
     enable_hedge: bool = False
+    # CLAUDE.md §4 (T3). load_risk_config() REQUIRES them in risk.toml; these defaults (= rule off)
+    # only serve code that builds a RiskConfig by hand, i.e. tests.
+    min_position_pct: float = 0.0       # smallest line after a BUY, or left after a partial SELL
+    max_sector_pct: float = 100.0       # by the universe's `sector` column
+    max_us_pct: float = 100.0           # holdings with country US
+    max_equity_pct: float = 100.0       # all holdings (cash >= 100 - this)
+    reentry_cooldown_days: int = 0      # business days without a BUY after a stop exit
 
 
 @dataclass(frozen=True)
@@ -134,6 +141,13 @@ def load_risk_config(path: Path | str = DEFAULT_RISK_PATH) -> RiskConfig:
     trades = int(lim["max_trades_per_month"])
     if trades < 0:
         raise ValueError("max_trades_per_month must be >= 0")
+    max_pos = _pct("max_position_pct", lim["max_position_pct"])
+    min_pos = _pct("min_position_pct", lim["min_position_pct"])
+    if min_pos >= max_pos:
+        raise ValueError(f"min_position_pct {min_pos} must be below max_position_pct {max_pos}")
+    cooldown = lim["reentry_cooldown_days"]
+    if not (isinstance(cooldown, int) and not isinstance(cooldown, bool) and 0 <= cooldown <= 60):
+        raise ValueError(f"reentry_cooldown_days must be an integer in [0, 60], got {cooldown!r}")
 
     u = raw.get("universe", {})
     universe = _read_instruments(u.get("files", []))
@@ -150,7 +164,7 @@ def load_risk_config(path: Path | str = DEFAULT_RISK_PATH) -> RiskConfig:
     return RiskConfig(
         capital=capital,
         base_currency=b["currency"].upper(),
-        max_position_pct=_pct("max_position_pct", lim["max_position_pct"]),
+        max_position_pct=max_pos,
         max_trades_per_month=trades,
         max_drawdown_pct=_pct("max_drawdown_pct", lim["max_drawdown_pct"]),
         max_price_deviation_pct=_pct("max_price_deviation_pct", lim["max_price_deviation_pct"], hi=20.0),
@@ -159,4 +173,9 @@ def load_risk_config(path: Path | str = DEFAULT_RISK_PATH) -> RiskConfig:
         universe=universe,
         hedge=hedge,
         enable_hedge=enable_hedge,
+        min_position_pct=min_pos,
+        max_sector_pct=_pct("max_sector_pct", lim["max_sector_pct"]),
+        max_us_pct=_pct("max_us_pct", lim["max_us_pct"]),
+        max_equity_pct=_pct("max_equity_pct", lim["max_equity_pct"]),
+        reentry_cooldown_days=cooldown,
     )

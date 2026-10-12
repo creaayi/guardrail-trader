@@ -56,3 +56,14 @@ Valeurs fixées par la décision 7 : `top_n = 40`, `lookback_days = 126`, `skip_
 **Valeurs proposées par Claude Code, à confirmer par l'humain** (le cahier ne les fixe pas) :
 - `max_atr_pct = 6.0` : au-delà, un stop à 2 × ATR14 serait toujours tronqué par le plancher −12 % (§5) ;
 - `max_age_days = 10` : historique en cache plus ancien = titre exclu et compté (cache hebdomadaire + jours fériés).
+
+## 12/10/2026 — T3 (PR en attente de validation humaine) : nouvelles limites de la gate
+
+Valeurs de `CLAUDE.md` §4 appliquées dans `config/risk.toml` :
+- resserrements : `max_position_pct` 25 → 2, `max_price_deviation_pct` 2 → 0,5, `max_commission_pct` 10 → 1 ;
+- **assouplissement autorisé par écrit** (§4, `TASKS.md` T3) : `max_trades_per_month` 10 → 60 ;
+- nouvelles clés : `min_position_pct = 0.5`, `max_sector_pct = 20`, `max_us_pct = 70`, `max_equity_pct = 90`,
+  `reentry_cooldown_days = 10` (obligatoires, validées fail-closed).
+- `max_drawdown_pct` reste à 25 jusqu'à T4 (passage à 15 avec les paliers).
+Interprétation à valider : le minimum de 0,5 % s'applique à la ligne après un BUY et à la ligne restante
+après une vente partielle ; une vente totale est toujours permise.
