@@ -1,4 +1,6 @@
-from guardrail_trader.risk.config import Instrument, RiskConfig, instrument_key, load_risk_config  # noqa: F401
+from guardrail_trader.risk.config import (  # noqa: F401
+    Instrument, MomentumConfig, RiskConfig, instrument_key, load_momentum_config, load_risk_config,
+)
 from guardrail_trader.risk.gate import (  # noqa: F401
     Decision,
     Holding,

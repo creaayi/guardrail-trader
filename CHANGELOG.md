@@ -48,3 +48,11 @@ ouverte, son résumé transmis à l'humain, et le merge attend sa validation. `T
 - Garde-fou valeur liquidative : à `journal_cli.py init` et à chaque run (statut `capital_guard`,
   code 3). Placé après le kill switch dans le run, pour qu'une liquidation forcée ne soit jamais bloquée.
 - Aucune autre limite modifiée.
+
+## 12/10/2026 — T2b appliquée : classement momentum
+
+Nouvelle section `[momentum]` dans `config/risk.toml`, validée fail-closed (`load_momentum_config`).
+Valeurs fixées par la décision 7 : `top_n = 40`, `lookback_days = 126`, `skip_days = 21`.
+**Valeurs proposées par Claude Code, à confirmer par l'humain** (le cahier ne les fixe pas) :
+- `max_atr_pct = 6.0` : au-delà, un stop à 2 × ATR14 serait toujours tronqué par le plancher −12 % (§5) ;
+- `max_age_days = 10` : historique en cache plus ancien = titre exclu et compté (cache hebdomadaire + jours fériés).

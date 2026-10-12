@@ -22,8 +22,9 @@ from guardrail_trader.config import PROJECT_ROOT
 from guardrail_trader.executor import execute
 from guardrail_trader.journal import Journal
 from guardrail_trader.market import daily_history, is_open, market_sessions, price_instruments, summarize_history
+from guardrail_trader.momentum import rank
 from guardrail_trader.risk import (
-    Decision, MarketInfo, Proposal, RiskConfig, evaluate, instrument_key, kill_switch_triggered,
+    Decision, MarketInfo, MomentumConfig, Proposal, RiskConfig, evaluate, instrument_key, kill_switch_triggered,
     liquidation_proposals,
 )
 
@@ -100,7 +101,8 @@ def _jsonable(obj):
 def run_once(broker, market, j: Journal, cfg: RiskConfig, llm: LLMSetup, *, mode: str, dry_run: bool = False,
              fill_timeout: float = 120.0, my_picks: set[str] | None = None, web_search: bool = False,
              log: Callable[[str], None] = print, now: datetime | None = None,
-             runs_dir: Path = RUNS_DIR) -> int:
+             runs_dir: Path = RUNS_DIR, bars=None, momentum_cfg: MomentumConfig | None = None) -> int:
+    """bars (BarCache) + momentum_cfg: give Claude the pocket A ranking; omitted = no ranking."""
     for stale_id in j.abort_stale_runs():
         log(f"run {stale_id} was left 'running' by a process that died; marked aborted")
     run_id = j.start_run(mode)
@@ -227,9 +229,15 @@ def run_once(broker, market, j: Journal, cfg: RiskConfig, llm: LLMSetup, *, mode
                 return 0
             run_budget = min(llm.run_budget_usd, cap - spent)
             log(f"LLM {llm.provider}/{llm.model}; spent this month US${spent:.2f} of US${cap:.2f}")
+        momentum = None
+        if bars is not None and momentum_cfg is not None:
+            ranking = rank(cfg.universe, bars.bars, momentum_cfg, (now or datetime.now(NY)).date())
+            momentum = ranking.for_claude()
+            log(f"momentum ranking as of {ranking.as_of or '-'}: {len(ranking.top)} ranked, excluded {ranking.excluded}")
         client = llm.make_client(market)
         agent = TradingAgent(
             client, cfg, state, market, my_picks, recent_activity=j.recent_activity(10), avg_costs=j.avg_costs(),
+            momentum=momentum,
             request_timeout_s=llm.request_timeout_s,
             **({} if llm.max_seconds is None else dict(max_seconds=llm.max_seconds)),
             web_search=web_search, log=log, model=llm.model,

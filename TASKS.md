@@ -37,6 +37,7 @@ Mise à jour du 12/10/2026 : décisions de validation de T0 intégrées (voir `C
 - Claude reçoit les 40 premiers avec leurs scores ; il ne recalcule rien. Le critère « qualité » attend les fondamentaux de la phase 2.
 - Le même cache sert à l'ATR14 et au plus haut de clôture des stops (T5).
 - Tests : score sur série synthétique, exclusion par le filtre de volatilité, cache incomplet signalé (jamais inventé).
+- État au 12/10/2026 : `guardrail_trader/bars.py` (cache `data/bars.sqlite`), `guardrail_trader/momentum.py`, `scripts/refresh_bars.py` (crontab samedi + dimanche 05:00 UTC), section `[momentum]` de `risk.toml`. Le classement est transmis dans le message de tâche de Claude. Cache vide tant que le gateway n'est pas configuré (T10).
 
 ## T3 — Nouvelles limites dans la gate
 - `risk/config.py` : clés `min_position_pct`, `max_sector_pct`, `max_us_pct`, `max_equity_pct`, `reentry_cooldown_days`, validées.

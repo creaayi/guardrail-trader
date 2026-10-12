@@ -18,10 +18,11 @@ from zoneinfo import ZoneInfo
 
 from guardrail_trader import llm
 from guardrail_trader.broker import IBKRBroker
+from guardrail_trader.bars import BarCache
 from guardrail_trader.config import PROJECT_ROOT, load_ibkr_config
 from guardrail_trader.journal import Journal
 from guardrail_trader.pipeline import IBKRMarketData, LLMSetup, run_once
-from guardrail_trader.risk import load_risk_config
+from guardrail_trader.risk import load_momentum_config, load_risk_config
 
 
 def log(msg: str) -> None:
@@ -53,12 +54,15 @@ def main() -> int:
     mode = ib_cfg.mode + ("-dry" if args.dry_run else "") + ("-fake" if args.fake_claude else "")
     picks_file = PROJECT_ROOT / "config/universe/my_picks.csv"   # optional owner picks (not used in phase 1)
     picks = {r["symbol"] for r in csv.DictReader(open(picks_file))} if picks_file.exists() else set()
+    bars = BarCache()
     try:
         with IBKRBroker(ib_cfg, readonly=args.dry_run) as broker:
             return run_once(broker, IBKRMarketData(broker, cfg), j, cfg, llm_setup(args.fake_claude),
                             mode=mode, dry_run=args.dry_run, fill_timeout=args.fill_timeout, my_picks=picks,
-                            web_search=os.getenv("ENABLE_WEB_SEARCH", "0") == "1", log=log)
+                            web_search=os.getenv("ENABLE_WEB_SEARCH", "0") == "1", log=log,
+                            bars=bars, momentum_cfg=load_momentum_config())
     finally:
+        bars.close()
         j.close()
 
 

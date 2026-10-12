@@ -174,6 +174,7 @@ class ScriptedClaude:
 
     def create(self, **kw):
         self.calls += 1
+        self.last_request = kw
         turn = self.turns[min(self.calls - 1, len(self.turns) - 1)]
         blocks = [NS(type="tool_use", id=f"toolu_{next(self._ids)}", name=n, input=a) for n, a in turn]
         return NS(content=blocks, stop_reason="tool_use", usage=self.usage)
@@ -213,7 +214,8 @@ class Bot:
             self.broker.holdings[key] = qty
 
     def run(self, client=None, market: SimMarket | None = None, *, dry_run=False, cost_fn=None,
-            monthly_budget_usd=2.50, run_budget_usd=0.10, max_seconds=None, model="claude-sonnet-5") -> Outcome:
+            monthly_budget_usd=2.50, run_budget_usd=0.10, max_seconds=None, model="claude-sonnet-5",
+            **run_kw) -> Outcome:
         client = client or ScriptedClaude([[("submit_orders", {"orders": [], "summary": "hold"})]])
         made = []
 
@@ -226,7 +228,7 @@ class Bot:
         rc, err = None, None
         try:
             rc = run_once(self.broker, market or SimMarket(), self.j, self.cfg, llm, mode="paper-eval",
-                          dry_run=dry_run, fill_timeout=0, log=logs.append, runs_dir=self.tmp / "runs")
+                          dry_run=dry_run, fill_timeout=0, log=logs.append, runs_dir=self.tmp / "runs", **run_kw)
         except Exception as e:  # the pipeline re-raises after journaling the error
             err = e
         calls_before = getattr(client, "_calls_seen", 0)
