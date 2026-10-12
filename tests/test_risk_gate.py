@@ -288,3 +288,12 @@ def test_t3_keys_are_required(tmp_path: Path, key):
     p.write_text(text.replace('"config/universe/', f'"{PROJECT_ROOT}/config/universe/'))
     with pytest.raises(KeyError):
         load_risk_config(p)
+
+
+def test_partial_sell_leaving_0_3_pct_is_rejected_full_sell_is_accepted():
+    # 1% line (10 x 10) in a 10,000 portfolio; min 0.5%
+    state = PortfolioState(cash_base=9900.0, holdings={"DDD:EUR": Holding(10, 10.0)}, peak_value_base=10000.0)
+    c = t3cfg(min_position_pct=0.5)
+    (d,) = t3([Proposal("DDD", "SBF", "EUR", "SELL", 7, 10.0)], c, state)     # leaves 3 x 10 = 0.3%
+    assert not d.approved and any("0.30% line" in r for r in d.reasons)
+    assert t3([Proposal("DDD", "SBF", "EUR", "SELL", 10, 10.0)], c, state)[0].approved
