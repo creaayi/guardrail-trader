@@ -366,3 +366,26 @@ def test_empty_universe_is_a_quiet_skip_not_a_gateway_failure(tmp_path):
     bot = Bot(tmp_path, cfg=replace(CFG, universe={}))
     out = bot.run(submits(order("CCC", 1)))
     assert out.rc == 0 and out.status == "empty_universe" and out.llm_calls == 0 and bot.broker.orders == {}
+
+
+# ------------------------------------------------------------------ momentum ranking (T2b)
+def test_claude_gets_the_code_computed_ranking_and_missing_data_is_flagged(tmp_path):
+    """Invariant: the ranking comes from the bar cache; instruments without history are counted, not invented."""
+    from datetime import date, datetime, timedelta
+
+    from guardrail_trader.bars import Bar, BarCache
+    from guardrail_trader.risk import MomentumConfig
+
+    cache = BarCache(tmp_path / "bars.sqlite")
+    last = date(2026, 10, 9)
+    closes = [50 + i * 0.2 for i in range(140)]
+    cache.upsert("BBB:USD", [Bar((last - timedelta(days=139 - i)).isoformat(), c, c * 1.01, c * 0.99, c, 1e6)
+                             for i, c in enumerate(closes)])
+    client = submits()
+    out = Bot(tmp_path).run(client, bars=cache, momentum_cfg=MomentumConfig(),
+                            now=datetime(2026, 10, 12, 11, 0))
+    assert out.status == "ok"
+    task = client.last_request["messages"][0]["content"][0]["text"]
+    assert "Pocket A momentum ranking" in task and '"symbol":"BBB"' in task and '"AAA"' not in task
+    assert any("momentum ranking as of 2026-10-09: 1 ranked" in m and "'no cached history': 2" in m for m in out.logs)
+    cache.close()

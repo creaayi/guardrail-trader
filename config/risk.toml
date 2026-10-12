@@ -25,3 +25,12 @@ files = [
 ]
 hedge_files = ["config/universe/hedge.csv"]   # pocket C: IWDA (benchmark), CSPX, EXSA, short EUR bonds
 enable_hedge = false   # phase 1: hedge instruments are never shown to Claude and the gate blocks them
+
+# Pocket A ranking, computed by code from the bar cache (scripts/refresh_bars.py, weekends).
+# Claude receives the top_n with their scores and never recomputes them (CHANGELOG 12/10/2026, T2b).
+[momentum]
+top_n = 40
+lookback_days = 126    # ~6 months of trading days
+skip_days = 21         # minus the last month
+max_atr_pct = 6.0      # volatility filter: ATR14/price above this is excluded (2xATR stop would hit the -12% floor)
+max_age_days = 10      # cached history older than this is not used (missing data is flagged, never filled in)

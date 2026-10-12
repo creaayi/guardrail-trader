@@ -79,6 +79,15 @@ applies the CLAUDE.md §3 filters (6 months of history, 20-day traded value ≥ 
 and takes ~2.5 hours because of IBKR's historical-data pacing: run it monthly, at the weekend. The
 market-cap filter has no free data source; the `source` column says `cap unverified`.
 
+## Momentum ranking (pocket A)
+
+`[momentum]` in `config/risk.toml` sets the ranking the code computes before each Claude call:
+return from `lookback_days` to `skip_days` trading days ago (6 months excluding the last month),
+instruments with ATR14/price above `max_atr_pct` excluded, top `top_n` sent to Claude with their
+scores. It reads `data/bars.sqlite`, filled at the weekend by `scripts/refresh_bars.py` (paced for
+IBKR's historical-data limits). Missing, short or stale history (`max_age_days`) excludes the
+instrument and is counted in the ranking Claude sees; nothing is filled in.
+
 ## LLM provider and spend caps
 
 In `.env`:

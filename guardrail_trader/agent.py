@@ -48,6 +48,9 @@ Things to weigh:
   plus commission) against the expected gain. A gain alone is not a reason to sell, and a loss alone is not a
   reason to hold.
 - Holdings the owner specifically picked are marked my_pick=true; treat them as candidates, not obligations.
+- The task message may include the pocket A momentum ranking, computed by code from cached daily bars. Use it as
+  the candidate list for new entries; do not recompute it. Its as_of date and excluded counts say how fresh and
+  complete it is; if it is missing or empty, say so in your summary rather than guessing.
 - get_portfolio includes recent_activity: your last orders and what happened (blocked, filled, not filled).
   Don't repeat an order that was just blocked or didn't fill without a reason; unfilled orders still used up the monthly limit.
 
@@ -130,7 +133,7 @@ class TradingAgent:
                  log: Callable[[str], None] = print, model: str = "claude-sonnet-5",
                  cost_fn: Callable = _free, run_budget_usd: float = 0.50,
                  on_usage: Callable | None = None, recent_activity: list[dict] | None = None,
-                 avg_costs: dict[str, float] | None = None,
+                 avg_costs: dict[str, float] | None = None, momentum: dict | None = None,
                  max_seconds: float = MAX_SECONDS, request_timeout_s: float = 60.0,
                  clock: Callable[[], float] = time.monotonic):
         self.client, self.cfg, self.state, self.market = client, cfg, state, market
@@ -143,6 +146,7 @@ class TradingAgent:
         self.submit_revisions = 0
         self.recent = recent_activity or []
         self.avg_costs = avg_costs or {}
+        self.momentum = momentum
         self.max_seconds, self.request_timeout_s, self.clock = max_seconds, request_timeout_s, clock
         self.max_pos_base = state.value_base * cfg.max_position_pct / 100
 
@@ -159,6 +163,9 @@ class TradingAgent:
         tools[-1]["cache_control"] = {"type": "ephemeral"}
         tools += [WEB_SEARCH_TOOL] if self.web_search else []
         system_blocks = [{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}]
+        if self.momentum is not None:
+            task += ("\n\nPocket A momentum ranking (computed by code; do not recompute):\n"
+                     + json.dumps(self.momentum, separators=(",", ":")))
         messages: list = [{"role": "user", "content": [{"type": "text", "text": task}]}]
         res = AgentResult([], "", False, 0, transcript=messages)
         deadline = self.clock() + self.max_seconds

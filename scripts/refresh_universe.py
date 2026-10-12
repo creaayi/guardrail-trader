@@ -25,7 +25,7 @@ import csv
 import io
 import sys
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date
 from pathlib import Path
 
@@ -233,7 +233,8 @@ def main() -> int:
         todo["eu"] = parse_stoxx600(r.content)
     log("candidates: " + ", ".join(f"{k} {len(v)}" for k, v in todo.items()))
 
-    with IBKRBroker(load_ibkr_config(), readonly=True) as broker:
+    ib_cfg = load_ibkr_config()   # client id + 2: never collides with a bot run or refresh_bars.py
+    with IBKRBroker(replace(ib_cfg, client_id=ib_cfg.client_id + 2), readonly=True) as broker:
         broker.ensure_ready()
         check_volume_units(broker, args.pace)
         for market, cands in todo.items():

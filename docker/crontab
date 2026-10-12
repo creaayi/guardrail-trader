@@ -1,3 +1,7 @@
 # supercronic crontab (container time is UTC; that's fine — scheduled_run.py decides
 # in America/New_York time whether this tick falls inside a trading slot).
 */15 * * * * cd /app && python scripts/scheduled_run.py
+# Weekend bar cache for the momentum ranking (T2b): Saturday full pass, Sunday catches up on failures.
+# Paced for IBKR's historical-data limits (~3 h for ~1,000 instruments); no trading slot on weekends.
+0 5 * * 6 cd /app && python scripts/refresh_bars.py
+0 5 * * 0 cd /app && python scripts/refresh_bars.py
