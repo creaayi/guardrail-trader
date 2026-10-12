@@ -51,7 +51,8 @@ def main() -> int:
         log("Journal not initialised: run scripts/journal_cli.py init")
         return 1
     mode = ib_cfg.mode + ("-dry" if args.dry_run else "") + ("-fake" if args.fake_claude else "")
-    picks = {r["symbol"] for r in csv.DictReader(open(PROJECT_ROOT / "config/universe/my_picks.csv"))}
+    picks_file = PROJECT_ROOT / "config/universe/my_picks.csv"   # optional owner picks (not used in phase 1)
+    picks = {r["symbol"] for r in csv.DictReader(open(picks_file))} if picks_file.exists() else set()
     try:
         with IBKRBroker(ib_cfg, readonly=args.dry_run) as broker:
             return run_once(broker, IBKRMarketData(broker, cfg), j, cfg, llm_setup(args.fake_claude),

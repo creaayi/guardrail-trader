@@ -147,6 +147,7 @@ def test_input_state_not_mutated():
 def test_shipped_config_loads_and_is_fail_closed():
     c = load_risk_config()
     assert (c.max_position_pct, c.max_trades_per_month, c.max_drawdown_pct) == (25.0, 10, 25.0)
+    assert c.enable_hedge is False and "IWDA:EUR" in c.hedge and not set(c.hedge) & set(c.universe)
 
 
 def test_invalid_config_refuses_to_load(tmp_path: Path):

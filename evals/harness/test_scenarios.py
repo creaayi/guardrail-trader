@@ -357,3 +357,12 @@ def test_capital_guard_never_blocks_the_kill_switch(tmp_path):
     bot.broker.net_liquidation = 1.0
     out = bot.run(market=SimMarket(prices=CRASH))
     assert out.status == "kill_switch" and {o.action for o in bot.broker.orders.values()} == {"SELL"}
+
+
+def test_empty_universe_is_a_quiet_skip_not_a_gateway_failure(tmp_path):
+    """Invariant: fail-closed universe = no Claude call, no order, and no retry/restart signal (rc 0)."""
+    from dataclasses import replace
+    from evals.sim import CFG
+    bot = Bot(tmp_path, cfg=replace(CFG, universe={}))
+    out = bot.run(submits(order("CCC", 1)))
+    assert out.rc == 0 and out.status == "empty_universe" and out.llm_calls == 0 and bot.broker.orders == {}
