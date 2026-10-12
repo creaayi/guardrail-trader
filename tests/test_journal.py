@@ -149,3 +149,29 @@ def test_topup_is_not_a_drawdown_and_cannot_inflate_the_peak_in_one_tick(j):
     first = j.portfolio_state({})                            # run 2: value 200, previous 100
     assert first.peak_value_base == 100.0 and first.drawdown_pct == 0.0
     assert j.portfolio_state({}).peak_value_base == 200.0    # run 3 confirms 200
+
+
+# -- EUR budget, Paris calendar month (CHANGELOG 12/10/2026) ---------------------------------
+def test_eur_budget(tmp_path):
+    j = Journal(tmp_path / "eur.sqlite")
+    j.init_budget(800_000.0, "eur")
+    assert j.base_currency() == "EUR" and j.cash_base() == 800_000.0 and j.peak() == 800_000.0
+    j.record_fill("SAP", "EUR", "BUY", 10, 200.0, commission=3.0, fx_to_base=1.0)
+    j.record_fill("AAPL", "USD", "BUY", 10, 250.0, commission=1.0, fx_to_base=0.86)
+    assert j.cash_base() == pytest.approx(800_000.0 - 2003.0 - 2501.0 * 0.86)
+
+
+def test_orders_are_counted_by_paris_calendar_month(j):
+    from datetime import datetime, timezone
+    from zoneinfo import ZoneInfo
+
+    for ts in ("2026-10-31T23:59:00+01:00",          # Paris, last minute of October
+               "2026-11-01T00:01:00+01:00",          # Paris, first minute of November
+               "2026-11-02T10:00:00+01:00"):
+        j.db.execute("INSERT INTO orders(ts, symbol) VALUES(?, 'X')", (ts,))
+    paris = ZoneInfo("Europe/Paris")
+    assert j.orders_this_month(datetime(2026, 10, 31, 12, 0, tzinfo=paris)) == 1
+    assert j.orders_this_month(datetime(2026, 11, 1, 0, 30, tzinfo=paris)) == 2
+    # 23:30 UTC on 31 Oct is already November in Paris; 22:30 UTC is still October
+    assert j.orders_this_month(datetime(2026, 10, 31, 23, 30, tzinfo=timezone.utc)) == 2
+    assert j.orders_this_month(datetime(2026, 10, 31, 22, 30, tzinfo=timezone.utc)) == 1

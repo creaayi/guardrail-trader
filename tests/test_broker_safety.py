@@ -95,3 +95,56 @@ def test_ensure_ready_raises_when_requests_time_out(rows):
     """Empty/zero account summary = requests timed out; positions would come back empty too."""
     with pytest.raises(BrokerNotReadyError):
         _broker(rows).ensure_ready()
+
+
+# -- capital guard and FX to the EUR base (CHANGELOG 12/10/2026) ------------------------------
+from guardrail_trader.broker import check_capital  # noqa: E402
+
+
+def test_capital_guard_passes_when_the_account_covers_the_capital():
+    # 1 M USD paper account at 0.86 EUR per USD covers an 800k EUR budget
+    assert check_capital(1_000_000.0, 0.86, 800_000.0, "EUR") == pytest.approx(860_000.0)
+
+
+@pytest.mark.parametrize("net_liq,fx", [(900_000.0, 0.86), (float("nan"), 0.86), (1_000_000.0, float("nan"))])
+def test_capital_guard_refuses_a_smaller_or_unknown_account(net_liq, fx):
+    with pytest.raises(BrokerSafetyError):
+        check_capital(net_liq, fx, 800_000.0, "EUR")
+
+
+def _fx_broker(quotes: dict[str, float]):
+    """Broker whose IDEALPRO only knows `quotes` (pair -> price)."""
+    from types import SimpleNamespace as NS
+    b = IBKRBroker.__new__(IBKRBroker)
+
+    def fx_contract(pair):
+        if pair not in quotes:
+            raise ValueError(f"Unknown FX pair {pair}")
+        return pair
+    b.fx_contract = fx_contract
+    b.quote = lambda pair: NS(price=quotes[pair])
+    return b
+
+
+@pytest.mark.parametrize("ccy,pair,price,expected", [
+    ("USD", "EURUSD", 1.16, 1 / 1.16),
+    ("GBP", "EURGBP", 0.87, 1 / 0.87),
+    ("CHF", "EURCHF", 0.94, 1 / 0.94),
+])
+def test_fx_to_eur_inverts_the_eur_quoted_pair(ccy, pair, price, expected):
+    b = _fx_broker({"EURUSD": 1.16, "EURGBP": 0.87, "EURCHF": 0.94})
+    assert b.fx_to_base(ccy, "EUR") == pytest.approx(expected)
+
+
+def test_fx_to_eur_uses_the_direct_pair_when_only_it_exists():
+    assert _fx_broker({"USDEUR": 0.86}).fx_to_base("USD", "EUR") == pytest.approx(0.86)
+
+
+def test_fx_to_base_is_one_for_the_base_currency():
+    assert _fx_broker({}).fx_to_base("eur", "EUR") == 1.0
+
+
+def test_fx_without_any_quote_is_market_data_unavailable():
+    from guardrail_trader.broker import MarketDataUnavailableError
+    with pytest.raises(MarketDataUnavailableError):
+        _fx_broker({}).fx_to_base("CHF", "EUR")

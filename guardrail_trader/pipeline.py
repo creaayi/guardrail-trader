@@ -4,7 +4,7 @@ A plain function with its dependencies passed in (broker, market data, journal, 
 the CLI (scripts/run_bot.py) and the scenario evals (evals/) drive exactly the same code.
 
 Return codes: 0 ok/skipped, 1 error, 2 gateway unusable (not ready / no market data - retry),
-3 reconciliation failed (needs a human).
+3 needs a human (reconciliation failed, or the account holds less than the virtual capital).
 """
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ from typing import Any, Callable
 from zoneinfo import ZoneInfo
 
 from guardrail_trader.agent import TradingAgent
-from guardrail_trader.broker import BrokerNotReadyError, MarketDataUnavailableError
+from guardrail_trader.broker import BrokerNotReadyError, BrokerSafetyError, MarketDataUnavailableError, check_capital
 from guardrail_trader.config import PROJECT_ROOT
 from guardrail_trader.executor import execute
 from guardrail_trader.journal import Journal
@@ -45,6 +45,9 @@ class IBKRMarketData:
 
     def fx_rates(self) -> dict[str, float]:
         return {c: self.broker.fx_to_base(c, self.cfg.base_currency) for c in {i.currency for i in self.cfg.universe.values()}}
+
+    def fx_to_base(self, currency: str) -> float:
+        return self.broker.fx_to_base(currency, self.cfg.base_currency)
 
     def price_all(self) -> dict[str, float]:
         return price_instruments(self.broker, list(self.cfg.universe.values()))
@@ -128,7 +131,8 @@ def run_once(broker, market, j: Journal, cfg: RiskConfig, llm: LLMSetup, *, mode
 
         # 2. Prices + FX
         try:
-            fx = market.fx_rates()
+            # The base currency is always present: commissions can be reported in it.
+            fx = {cfg.base_currency: 1.0, **market.fx_rates()}
             log(f"fx {fx}; pricing {len(cfg.universe)} instruments...")
             prices = market.price_all()
             if not prices:
@@ -184,6 +188,17 @@ def run_once(broker, market, j: Journal, cfg: RiskConfig, llm: LLMSetup, *, mode
             j.finish_run(run_id, "market_closed", state)
             log("US market closed (or <15 min left). Skipping (no Claude call, no cost).")
             return 0
+
+        # Capital guard: the broker account must cover the virtual capital. Checked after the kill
+        # switch on purpose, so a forced liquidation is never blocked by it.
+        try:
+            acct_fx = fx[snap.currency] if snap.currency in fx else market.fx_to_base(snap.currency)
+            acct_base = check_capital(snap.net_liquidation, acct_fx, cfg.capital, cfg.base_currency)
+        except (BrokerSafetyError, MarketDataUnavailableError) as e:
+            j.finish_run(run_id, "capital_guard", state, str(e))
+            log(f"CAPITAL GUARD: {e} Not trading; needs a human.")
+            return 3
+        log(f"account {acct_base:,.2f} {cfg.base_currency} covers capital {cfg.capital:,.2f}")
 
         # Monthly order limit used up: every order Claude proposed would be blocked, so don't pay
         # for the call. The kill switch above is unaffected (liquidation bypasses this limit).

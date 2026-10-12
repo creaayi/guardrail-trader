@@ -89,3 +89,10 @@ def test_get_portfolio_shows_cost_basis_and_unrealized_pnl():
     assert rows["CSCO"]["unrealized_pnl"] == 56.0          # (154 - 140) * 4
     assert rows["CSCO"]["unrealized_pnl_pct"] == 10.0
     assert "avg_cost" not in rows["META"]                   # no ledger cost known: omit, never invent
+
+
+def test_order_schema_accepts_the_eur_universe_currencies():
+    from guardrail_trader.agent import TOOLS
+    submit = next(t for t in TOOLS if t["name"] == "submit_orders")
+    assert submit["input_schema"]["properties"]["orders"]["items"]["properties"]["currency"]["enum"] == \
+        ["USD", "EUR", "GBP", "CHF"]

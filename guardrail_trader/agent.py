@@ -37,7 +37,7 @@ Hard limits (code-enforced):
 - If the portfolio falls {dd}% below its peak, code sells everything and halts trading.
 
 Things to weigh:
-- Each US order costs roughly US$1 commission; frequent trading erodes returns. Prefer fewer, deliberate trades.
+- Every order pays a broker commission; frequent trading erodes returns. Prefer fewer, deliberate trades.
 - Prices you see may be delayed ~15 minutes.
 - Diversify: a concentrated portfolio can hit the kill switch.
 - Selling is a normal decision, not a failure. Each holding shows avg_cost and unrealized P/L. Consider a SELL when
@@ -81,7 +81,7 @@ TOOLS = [
 ]
 
 _ORDER = {"type": "object", "properties": {
-    "symbol": {"type": "string"}, "currency": {"type": "string", "enum": ["USD", "AUD"]},
+    "symbol": {"type": "string"}, "currency": {"type": "string", "enum": ["USD", "EUR", "GBP", "CHF"]},
     "action": {"type": "string", "enum": ["BUY", "SELL"]},
     "quantity": {"type": "integer", "minimum": 1},
     "limit_price": {"type": "number", "description": "In the instrument currency."},

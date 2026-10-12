@@ -1,4 +1,4 @@
-"""SQLite journal: the bot's audit log AND its virtual A$100 sub-account.
+"""SQLite journal: the bot's audit log AND its virtual sub-account (budget from config/risk.toml).
 
 The paper account holds far more than the budget, so the bot never trusts the
 broker's cash figure. Its cash and holdings come from this ledger:
@@ -24,7 +24,7 @@ from guardrail_trader.config import PROJECT_ROOT
 from guardrail_trader.risk.gate import Decision, Holding, PortfolioState
 
 DEFAULT_DB = PROJECT_ROOT / "data" / "journal.sqlite"
-TZ = ZoneInfo("Australia/Sydney")
+TZ = ZoneInfo("Europe/Paris")   # timestamps; calendar months for the order and LLM limits
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS runs (
@@ -276,7 +276,7 @@ class Journal:
         return out
 
     def orders_this_month(self, now: datetime | None = None) -> int:
-        """Counts orders SUBMITTED this calendar month (Sydney) - filled or not."""
+        """Counts orders SUBMITTED this calendar month (Paris) - filled or not."""
         now = now or datetime.now(TZ)
         month = now.astimezone(TZ).strftime("%Y-%m")
         return int(self.db.execute("SELECT COUNT(*) FROM orders WHERE substr(ts,1,7)=?", (month,)).fetchone()[0])
@@ -294,7 +294,7 @@ class Journal:
                  g("cache_read_input_tokens"), g("cache_creation_input_tokens"), searches, cost_usd))
 
     def llm_spend_usd(self, month: str | None = None) -> float:
-        """USD spent this calendar month (Sydney), or for `month`='YYYY-MM'; month='all' for lifetime."""
+        """USD spent this calendar month (Paris), or for `month`='YYYY-MM'; month='all' for lifetime."""
         if month == "all":
             return float(self.db.execute("SELECT COALESCE(SUM(cost_usd),0) FROM llm_usage").fetchone()[0])
         month = month or datetime.now(TZ).strftime("%Y-%m")

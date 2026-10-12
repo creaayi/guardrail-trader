@@ -330,3 +330,30 @@ def test_stray_open_order_stops_the_bot(tmp_path):
     bot.broker.open = [object()]
     out = bot.run(submits(order("CCC", 1)))
     assert out.rc == 3 and out.llm_calls == 0
+
+
+# ------------------------------------------------------------------ capital guard (CHANGELOG 12/10/2026)
+def test_account_smaller_than_the_virtual_capital_stops_before_claude(tmp_path):
+    """Invariant: the bot never trades a virtual budget the broker account can't pay for."""
+    bot = Bot(tmp_path)
+    bot.broker.net_liquidation = 4999.0              # capital is 5,000 in the base currency
+    out = bot.run(submits(order("CCC", 1)))
+    assert out.rc == 3 and out.status == "capital_guard"        # rc 3 = needs a human, no retry
+    assert out.llm_calls == 0 and bot.broker.orders == {}
+
+
+def test_capital_guard_converts_the_account_currency(tmp_path):
+    """A USD account is converted with the run's FX before the comparison."""
+    bot = Bot(tmp_path)
+    bot.broker.net_liquidation, bot.broker.currency = 3400.0, "USD"   # x1.5 = 5,100 >= 5,000
+    assert bot.run(submits(order("CCC", 1))).status == "ok"
+    bot.broker.net_liquidation = 3300.0                               # x1.5 = 4,950 < 5,000
+    assert bot.run(submits(order("CCC", 1))).status == "capital_guard"
+
+
+def test_capital_guard_never_blocks_the_kill_switch(tmp_path):
+    """Invariant: a forced liquidation goes ahead even when the account is below capital."""
+    bot = Bot(tmp_path, holdings=HELD)
+    bot.broker.net_liquidation = 1.0
+    out = bot.run(market=SimMarket(prices=CRASH))
+    assert out.status == "kill_switch" and {o.action for o in bot.broker.orders.values()} == {"SELL"}
