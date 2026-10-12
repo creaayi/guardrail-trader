@@ -18,14 +18,7 @@ import time
 from dataclasses import replace
 from datetime import date
 
-from guardrail_trader.bars import Bar, BarCache
-from guardrail_trader.broker.ibkr import to_major
-
-
-def to_bars(ib_bars, magnifier: int) -> list[Bar]:
-    return [Bar(str(b.date)[:10], to_major(float(b.open), magnifier), to_major(float(b.high), magnifier),
-                to_major(float(b.low), magnifier), to_major(float(b.close), magnifier), float(b.volume))
-            for b in ib_bars]
+from guardrail_trader.bars import BarCache, from_ibkr
 
 
 def duration(latest: str | None, today: date) -> str:
@@ -62,7 +55,7 @@ def main() -> int:
                         barSizeSetting="1 day", whatToShow="TRADES", useRTH=True, formatDate=1, timeout=60)
                     if not raw:
                         raise ValueError("no bars returned")
-                    cache.upsert(key, to_bars(raw, broker.magnifier(c)))
+                    cache.upsert(key, from_ibkr(raw, broker.magnifier(c)))
                     cache.mark(key, "ok")
                     ok += 1
                 except Exception as e:   # one bad instrument must not stop the batch

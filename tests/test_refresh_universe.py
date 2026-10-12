@@ -5,6 +5,7 @@ from types import SimpleNamespace as NS
 
 import pytest
 
+from guardrail_trader.bars import Bar, avg_traded_value, from_ibkr
 from guardrail_trader.config import PROJECT_ROOT
 from guardrail_trader.risk.config import _read_universe_csv
 
@@ -15,7 +16,7 @@ spec.loader.exec_module(ru)
 
 
 def bars(n, close=100.0, volume=100_000):
-    return [NS(close=close, volume=volume) for _ in range(n)]
+    return [Bar("2026-10-09", close, close, close, close, volume) for _ in range(n)]
 
 
 def test_ibkr_symbol_for_share_classes():
@@ -24,22 +25,26 @@ def test_ibkr_symbol_for_share_classes():
 
 def test_listing_filters():
     ok = bars(126)                                          # 100 x 100k = 10 M a day
-    assert ru.keep_or_reason(ok, 1, 1.0, "Technology") == ""
-    assert "sector" in ru.keep_or_reason(ok, 1, 1.0, "")
-    assert "6 months" in ru.keep_or_reason(bars(60), 1, 1.0, "Technology")
-    assert "traded value" in ru.keep_or_reason(bars(126, volume=40_000), 1, 1.0, "Technology")   # 4 M
+    assert ru.keep_or_reason(ok, 1.0, "Technology", 5e6) == ""
+    assert "sector" in ru.keep_or_reason(ok, 1.0, "", 5e6)
+    assert "6 months" in ru.keep_or_reason(bars(60), 1.0, "Technology", 5e6)
+    assert "traded value" in ru.keep_or_reason(bars(126, volume=40_000), 1.0, "Technology", 5e6)   # 4 M
 
 
-def test_traded_value_converts_pence_and_currency():
-    # LSE: 7,250 pence x 100k shares = 7.25 M GBP; x 1.15 EUR per GBP = 8.34 M EUR
-    assert ru.avg_traded_value(bars(20, close=7250.0), 100, 1.15) == pytest.approx(8_337_500.0)
-    # without the magnifier the same stock would look 100x more liquid
-    assert ru.avg_traded_value(bars(20, close=7250.0), 1, 1.15) == pytest.approx(833_750_000.0)
+def test_traded_value_from_ibkr_bars_converts_pence_and_currency():
+    # LSE: 7,250 pence x 100k shares = 7.25 M GBP; x 1.15 EUR per GBP = 8.34 M EUR >= 5 M
+    raw = [NS(date="20261009", open=7250.0, high=7250.0, low=7250.0, close=7250.0, volume=100_000)] * 126
+    gbp = from_ibkr(raw, 100)
+    assert avg_traded_value(gbp) * 1.15 == pytest.approx(8_337_500.0)
+    assert ru.keep_or_reason(gbp, 1.15, "Communications", 5e6) == ""
+    # 40k shares: 2.9 M GBP = 3.3 M EUR -> too illiquid
+    thin = from_ibkr([NS(date="20261009", open=7250.0, high=7250.0, low=7250.0, close=7250.0, volume=40_000)] * 126, 100)
+    assert "traded value" in ru.keep_or_reason(thin, 1.15, "Communications", 5e6)
 
 
 def test_traded_value_uses_the_last_20_bars():
     b = bars(100, volume=1) + bars(20, volume=100_000)
-    assert ru.avg_traded_value(b, 1, 1.0) == pytest.approx(10_000_000.0)
+    assert avg_traded_value(b) == pytest.approx(10_000_000.0)
 
 
 def _detail(primary, sec="STK"):

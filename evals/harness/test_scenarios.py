@@ -118,6 +118,7 @@ def test_budget_topup_mid_life_raises_the_cap_without_a_false_kill_switch(tmp_pa
     bot.run()
     before = bot.j.cash_base()
     assert bot.j.topup_to(10000.0, "AUD") == 5000.0 and bot.j.cash_base() == pytest.approx(before + 5000.0)
+    bot.broker.net_liquidation = 10000.0             # the account must back the larger budget (account guard)
     # 60 x CCC = A$1,800: over the old 25% cap (~A$1,250 of 5,000) but under the new one (~A$2,500 of 10,000).
     out = bot.run(submits(order("CCC", 60)))
     assert out.status == "ok" and not bot.j.is_halted()
@@ -333,10 +334,10 @@ def test_stray_open_order_stops_the_bot(tmp_path):
 
 
 # ------------------------------------------------------------------ capital guard (CHANGELOG 12/10/2026)
-def test_account_smaller_than_the_virtual_capital_stops_before_claude(tmp_path):
+def test_account_smaller_than_the_bots_value_stops_before_claude(tmp_path):
     """Invariant: the bot never trades a virtual budget the broker account can't pay for."""
     bot = Bot(tmp_path)
-    bot.broker.net_liquidation = 4999.0              # capital is 5,000 in the base currency
+    bot.broker.net_liquidation = 4999.0              # all cash: the bot is worth 5,000
     out = bot.run(submits(order("CCC", 1)))
     assert out.rc == 3 and out.status == "capital_guard"        # rc 3 = needs a human, no retry
     assert out.llm_calls == 0 and bot.broker.orders == {}
@@ -389,3 +390,21 @@ def test_claude_gets_the_code_computed_ranking_and_missing_data_is_flagged(tmp_p
     assert "Pocket A momentum ranking" in task and '"symbol":"BBB"' in task and '"AAA"' not in task
     assert any("momentum ranking as of 2026-10-09: 1 ranked" in m and "'no cached history': 2" in m for m in out.logs)
     cache.close()
+
+
+def test_account_guard_follows_the_bots_value_not_the_initial_capital(tmp_path):
+    """CHANGELOG 12/10/2026: the bot's own losses lower the account too; that must not stop the bot."""
+    bot = Bot(tmp_path, holdings=HELD)                          # ~2,700 invested of 5,000
+    down = {"AAA:USD": 90.0, "BBB:USD": 45.0, "CCC:USD": 20.0}  # -10% on holdings: bot ~4,730, no kill switch
+    bot.broker.net_liquidation = 4800.0                          # below capital 5,000, above the bot's value
+    out = bot.run(market=SimMarket(prices=down))
+    assert out.status == "ok", out.logs
+    bot.broker.net_liquidation = 4600.0                          # below the bot's value
+    assert bot.run(market=SimMarket(prices=down)).status == "capital_guard"
+
+
+def test_topup_the_account_cannot_back_is_stopped_by_the_account_guard(tmp_path):
+    bot = Bot(tmp_path)
+    bot.j.topup_to(10000.0, "AUD")                   # ledger says 10,000; the account still holds 5,000
+    out = bot.run(submits(order("CCC", 60)))
+    assert out.status == "capital_guard" and bot.broker.orders == {}

@@ -39,3 +39,4 @@ lookback_days = 126    # ~6 months of trading days
 skip_days = 21         # minus the last month
 max_atr_pct = 6.0      # volatility filter: ATR14/price above this is excluded (2xATR stop would hit the -12% floor)
 max_age_days = 10      # cached history older than this is not used (missing data is flagged, never filled in)
+min_traded_value = 5000000.0   # CLAUDE.md §3 liquidity: 20-day avg close x volume, USD (US) / EUR (EU), from the bar cache

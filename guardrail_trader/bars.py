@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
+from guardrail_trader.broker.ibkr import to_major
 from guardrail_trader.config import PROJECT_ROOT
 
 DEFAULT_BARS_DB = PROJECT_ROOT / "data" / "bars.sqlite"
@@ -34,6 +35,19 @@ class Bar:
     low: float
     close: float
     volume: float
+
+
+def from_ibkr(ib_bars, magnifier: int) -> list[Bar]:
+    """IBKR BarData -> Bar in currency units (LSE pence / priceMagnifier)."""
+    return [Bar(str(b.date)[:10], to_major(float(b.open), magnifier), to_major(float(b.high), magnifier),
+                to_major(float(b.low), magnifier), to_major(float(b.close), magnifier), float(b.volume))
+            for b in ib_bars]
+
+
+def avg_traded_value(bars: list[Bar], days: int = 20) -> float:
+    """Average close x volume over the last `days` bars, in the instrument's currency."""
+    last = bars[-days:]
+    return sum(b.close * b.volume for b in last) / len(last) if last else 0.0
 
 
 class BarCache:

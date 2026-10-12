@@ -14,7 +14,9 @@ from guardrail_trader.momentum import atr, momentum_return, rank
 from guardrail_trader.risk import Instrument, MomentumConfig, load_momentum_config
 
 TODAY = date(2026, 10, 12)
-CFG = MomentumConfig(top_n=2, lookback_days=126, skip_days=21, max_atr_pct=6.0, max_age_days=10)
+CFG = MomentumConfig(top_n=2, lookback_days=126, skip_days=21, max_atr_pct=6.0, max_age_days=10,
+                     min_traded_value=5_000_000.0)
+FX = {"USD": 0.86, "EUR": 1.0, "GBP": 1.15}
 
 
 def series(closes, last=TODAY - timedelta(days=3), spread=0.01):
@@ -61,7 +63,7 @@ def test_atr_uses_gaps_from_the_previous_close():
 def test_ranking_orders_by_score_and_keeps_top_n():
     data = {"AAA:USD": series(linear(100, 130)), "BBB:USD": series(linear(100, 150)),
             "CCC:USD": series(linear(100, 110))}
-    r = rank({k: inst(k[:3]) for k in data}, data.get, CFG, TODAY)
+    r = rank({k: inst(k[:3]) for k in data}, data.get, CFG, TODAY, FX)
     assert [x["symbol"] for x in r.top] == ["BBB", "AAA"] and [x["rank"] for x in r.top] == [1, 2]
     top = r.top[0]
     assert top["sector"] == "Technology" and top["country"] == "US" and top["momentum_pct"] > 0
@@ -70,7 +72,7 @@ def test_ranking_orders_by_score_and_keeps_top_n():
 
 def test_volatile_names_are_filtered_out():
     data = {"CALM:USD": series(linear(100, 120)), "WILD:USD": series(linear(100, 200), spread=0.05)}  # ATR ~10%
-    r = rank({k: inst(k.split(":")[0]) for k in data}, data.get, CFG, TODAY)
+    r = rank({k: inst(k.split(":")[0]) for k in data}, data.get, CFG, TODAY, FX)
     assert [x["symbol"] for x in r.top] == ["CALM"] and r.excluded == {"ATR14/price above 6.0%": 1}
 
 
@@ -79,13 +81,13 @@ def test_missing_short_or_stale_history_is_counted_never_filled_in():
             "SHORT:USD": series(linear(100, 120, n=60)),
             "STALE:USD": series(linear(100, 120), last=TODAY - timedelta(days=30))}
     uni = {k: inst(k.split(":")[0]) for k in [*data, "NONE:USD"]}
-    r = rank(uni, lambda k: data.get(k, []), CFG, TODAY)
+    r = rank(uni, lambda k: data.get(k, []), CFG, TODAY, FX)
     assert [x["symbol"] for x in r.top] == ["OK"]
     assert r.excluded == {"no cached history": 1, "history too short": 1, "history older than 10 days": 1}
 
 
 def test_empty_cache_gives_an_empty_ranking_that_says_so():
-    r = rank({"AAA:USD": inst("AAA")}, lambda k: [], CFG, TODAY)
+    r = rank({"AAA:USD": inst("AAA")}, lambda k: [], CFG, TODAY, FX)
     out = r.for_claude()
     assert out["top"] == [] and out["as_of"] is None and out["excluded_counts"] == {"no cached history": 1}
 
@@ -104,9 +106,10 @@ def test_bar_cache_upserts_and_orders_refreshes(tmp_path):
 
 
 def test_refresh_bars_converts_pence_and_picks_the_duration():
+    from guardrail_trader.bars import from_ibkr
     spec = importlib.util.spec_from_file_location("refresh_bars", PROJECT_ROOT / "scripts" / "refresh_bars.py")
     rb = importlib.util.module_from_spec(spec); sys.modules["refresh_bars"] = rb; spec.loader.exec_module(rb)
-    (b,) = rb.to_bars([NS(date=date(2026, 10, 9), open=7200.0, high=7300.0, low=7100.0, close=7250.0, volume=5e5)], 100)
+    (b,) = from_ibkr([NS(date=date(2026, 10, 9), open=7200.0, high=7300.0, low=7100.0, close=7250.0, volume=5e5)], 100)
     assert (b.date, b.open, b.high, b.low, b.close, b.volume) == ("2026-10-09", 72.0, 73.0, 71.0, 72.5, 5e5)
     assert rb.duration(None, TODAY) == "1 Y" and rb.duration("2026-10-09", TODAY) == "2 M"
     assert rb.duration("2026-07-01", TODAY) == "1 Y"
@@ -114,12 +117,14 @@ def test_refresh_bars_converts_pence_and_picks_the_duration():
 
 # ------------------------------------------------------------------ config + what Claude sees
 def test_shipped_momentum_config():
-    assert load_momentum_config() == MomentumConfig(40, 126, 21, 6.0, 10)
+    assert load_momentum_config() == MomentumConfig(40, 126, 21, 6.0, 10, 5_000_000.0)
 
 
-@pytest.mark.parametrize("bad", ["top_n = 0", "top_n = 500", "skip_days = 120", "max_atr_pct = 0", "max_age_days = 90"])
+@pytest.mark.parametrize("bad", ["top_n = 0", "top_n = 500", "skip_days = 120", "max_atr_pct = 0", "max_age_days = 90",
+                                 "min_traded_value = 0"])
 def test_invalid_momentum_config_refuses_to_load(tmp_path, bad):
-    good = {"top_n": "40", "lookback_days": "126", "skip_days": "21", "max_atr_pct": "6.0", "max_age_days": "10"}
+    good = {"top_n": "40", "lookback_days": "126", "skip_days": "21", "max_atr_pct": "6.0", "max_age_days": "10",
+            "min_traded_value": "5000000.0"}
     k, v = bad.split(" = ")
     good[k] = v
     p = tmp_path / "risk.toml"
@@ -146,3 +151,18 @@ def test_claude_receives_the_ranking_in_its_task():
                  log=lambda *_: None).run()
     assert "do not recompute" in seen["task"]
     assert json.loads(seen["task"].split("\n")[-1]) == ranking
+
+
+def test_illiquid_names_are_excluded_from_the_ranking():
+    def vol(bars, v):
+        return [replace(b, volume=v) for b in bars]
+    gbp = Instrument("VOD", "LSE", "GBP", "Vodafone", "Communications", "GB")
+    data = {"LIQ:USD": vol(series(linear(100, 120)), 60_000),      # ~7 M USD a day
+            "THIN:USD": vol(series(linear(100, 120)), 30_000),     # ~3.6 M USD
+            "VOD:GBP": vol(series(linear(1.0, 1.2)), 3_000_000)}   # ~3.6 M GBP x 1.15 = 4.1 M EUR
+    uni = {"LIQ:USD": inst("LIQ"), "THIN:USD": inst("THIN"), "VOD:GBP": gbp}
+    r = rank(uni, data.get, CFG, TODAY, FX)
+    assert [x["symbol"] for x in r.top] == ["LIQ"]
+    assert r.excluded == {"20-day traded value below 5,000,000": 2}
+    r = rank({"VOD:GBP": gbp}, data.get, CFG, TODAY, {})          # no FX: excluded, not guessed
+    assert r.top == [] and r.excluded == {"no FX rate": 1}
