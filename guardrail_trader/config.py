@@ -14,8 +14,10 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 load_dotenv(PROJECT_ROOT / ".env")
 
 # IBKR's standard API socket ports. Paper and live use different ports by default.
-PAPER_PORTS = {7497, 4002, 4004}  # TWS paper, IB Gateway paper, ib-gateway-docker paper (socat)
-LIVE_PORTS = {7496, 4001, 4003}   # TWS live,  IB Gateway live,  ib-gateway-docker live (socat)
+# ib-gateway-docker host mappings (docker-compose.yml, 127.0.0.1 only): 14002 -> paper 4004; 14001 is the
+# live equivalent, refused in paper mode like any live port.
+PAPER_PORTS = {7497, 4002, 4004, 14002}  # TWS, IB Gateway, ib-gateway-docker (socat), its host port
+LIVE_PORTS = {7496, 4001, 4003, 14001}   # same, live
 
 MARKET_DATA_TYPES = {1: "live", 2: "frozen", 3: "delayed", 4: "delayed-frozen"}
 
