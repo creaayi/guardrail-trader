@@ -7,6 +7,7 @@
 
 The run itself is guardrail_trader.pipeline.run_once(); this file wires in IBKR and the LLM.
 Exit codes: 0 ok/skipped, 1 error, 2 gateway unusable (transient), 3 needs a human (reconciliation / capital guard).
+Every run ends with an ntfy alert (guardrail_trader/alerts.py): a summary, plus a high-priority one on anomalies.
 """
 from __future__ import annotations
 
@@ -18,6 +19,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from guardrail_trader import llm
+from guardrail_trader.alerts import Notifier, not_executed, run_alerts
 from guardrail_trader.broker import IBKRBroker
 from guardrail_trader.bars import BarCache
 from guardrail_trader.config import PROJECT_ROOT, load_ibkr_config
@@ -52,10 +54,13 @@ def main() -> int:
 
     cfg = load_risk_config()
     ib_cfg = load_ibkr_config()
+    notifier = Notifier.from_env(log)
     j = Journal()
     if j.base_currency() is None:
         log("Journal not initialised: run scripts/journal_cli.py init")
+        notifier.send(not_executed("journal not initialised (journal_cli.py init)"))
         return 1
+    last_id = j.db.execute("SELECT COALESCE(MAX(id), 0) FROM runs").fetchone()[0]
     mode = ib_cfg.mode + ("-dry" if args.dry_run else "") + ("-fake" if args.fake_claude else "")
     picks_file = PROJECT_ROOT / "config/universe/my_picks.csv"   # optional owner picks (not used in phase 1)
     picks = {r["symbol"] for r in csv.DictReader(open(picks_file))} if picks_file.exists() else set()
@@ -68,9 +73,27 @@ def main() -> int:
                             bars=bars, momentum_cfg=load_momentum_config(),
                             trail_stops=args.trail_stops, stops_only=args.stops_only,
                             slot=SLOTS[args.slot] if args.slot else None)
+    except Exception as e:
+        if not j.db.execute("SELECT 1 FROM runs WHERE id > ?", (last_id,)).fetchone():
+            notifier.send(not_executed(f"{args.slot or 'manual'}: {type(e).__name__}: {e}"))
+        raise
     finally:
-        bars.close()
-        j.close()
+        try:
+            send_run_alerts(j, last_id, notifier)
+        finally:
+            bars.close()
+            j.close()
+
+
+def send_run_alerts(j: Journal, last_id: int, notifier: Notifier) -> None:
+    """Summary + anomaly alerts for the runs this process made. Never raises."""
+    try:
+        from guardrail_trader.metrics import from_journal
+        ids = [r[0] for r in j.db.execute("SELECT id FROM runs WHERE id > ? ORDER BY id", (last_id,))]
+        for a in run_alerts(j, ids, from_journal(j).excess_pct):
+            notifier.send(a)
+    except Exception as e:     # an alert problem is logged, never a run failure
+        log(f"alerts: could not build ({type(e).__name__}: {e})")
 
 
 if __name__ == "__main__":

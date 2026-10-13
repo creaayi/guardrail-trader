@@ -202,3 +202,25 @@ corrigés, avec accord humain. Sans effet en phase 1 (`enable_hedge = false`).
     40 premiers US aux créneaux US), pour que chaque créneau ait des candidats ;
   - hors lundi, le message de tâche dit « ajustements et gestion du risque seulement, pas de nouvelle entrée
     de poche A avant le rebalancement du lundi » (§6). C'est une consigne du prompt, pas une règle de la gate.
+
+## 13/10/2026 — T9 appliquée : alertes ntfy et rapport hebdomadaire
+
+- Alertes (`guardrail_trader/alerts.py`), selon la décision du 13/10 :
+  - résumé à chaque run (statut, NAV, drawdown, écart vs IWDA, décisions) ;
+  - alerte immédiate en priorité haute sur :
+    - tout arrêt en code 3 (réconciliation, `stop_sync_failed`, `capital_guard`) ;
+    - kill switch, changement de palier, perte journalière, erreur ;
+    - gateway inutilisable, run non exécuté ;
+  - watchdog hôte : « scheduler silencieux » après plus de 2 h sans heartbeat pendant l'ouverture de Paris
+    (09:00–17:30) ou de New York (09:30–16:00), répété au plus toutes les 2 h ; redémarrage du gateway et
+    plafond journalier atteint alertés aussi.
+- Topic ntfy secret : lu dans `.env`, jamais journalisé. Un envoi raté ne bloque jamais un run.
+- Le scheduler écrit son heartbeat à **chaque** passage. Avant, les passages d'un créneau déjà fait ne
+  l'écrivaient pas, ce qui aurait déclenché à tort le contrôle de santé Docker (20 min) pendant `eu_open`.
+- Rapport (`scripts/weekly_report.py` → `reports/YYYY-WW.md`), lancé le vendredi après le créneau `stops`,
+  depuis le journal uniquement.
+- **Choix de présentation proposés par Claude Code** : alpha, beta, Sharpe et Sortino affichés « n/d » sous
+  20 rendements quotidiens ; calibration par tranches de confiance de 0,1 (moins de 0,4 regroupé), écart
+  moyen pondéré par le nombre de décisions.
+- À faire par l'humain : renseigner `NTFY_TOPIC` dans `.env` ; installer la ligne crontab du watchdog sur
+  l'hôte (`docs/alerts.md`).

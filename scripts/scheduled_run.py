@@ -40,6 +40,13 @@ def slot_done(rc: int) -> bool:
     return rc in DONE_CODES
 
 
+def write_heartbeat(heartbeat: dict) -> None:
+    (ROOT / "data").mkdir(exist_ok=True)
+    tmp = ROOT / "data" / "scheduler_heartbeat.tmp"
+    tmp.write_text(json.dumps(heartbeat))
+    tmp.replace(ROOT / "data" / "scheduler_heartbeat.json")
+
+
 def load_state() -> dict:
     try:
         return json.loads(STATE.read_text())
@@ -59,10 +66,11 @@ def save_state(state: dict) -> None:
 def main(argv: list[str]) -> int:
     now_ny = datetime.now(NY)
     heartbeat = {"last_tick_ny": now_ny.isoformat(timespec="seconds")}
+    # Every tick proves the scheduler is alive (docker healthcheck, silent-scheduler watchdog), including the
+    # ticks of a slot already done; a run result is added after the run.
+    write_heartbeat(heartbeat)
     slot = current_slot(now_ny)
     if slot is None and "--force" not in argv:
-        (ROOT / "data").mkdir(exist_ok=True)
-        (ROOT / "data" / "scheduler_heartbeat.json").write_text(json.dumps(heartbeat))
         return 0
     name = slot.name if slot else "manual"
     day = slot.day(now_ny) if slot else now_ny.date()
@@ -94,7 +102,11 @@ def main(argv: list[str]) -> int:
         state[key] = entry
         save_state(state)
         heartbeat.update(last_run_key=key, last_rc=rc)
-        (ROOT / "data" / "scheduler_heartbeat.json").write_text(json.dumps(heartbeat))
+        write_heartbeat(heartbeat)
+        if name == "stops" and day.weekday() == 4:     # Friday, after us_close and the day's stop fills
+            with open(LOGS / f"weekly_report_{day:%Y%m%d}.log", "w") as log:
+                subprocess.run([sys.executable, str(ROOT / "scripts" / "weekly_report.py"), "--notify"],
+                               cwd=ROOT, stdout=log, stderr=subprocess.STDOUT, timeout=600)
         return 0
 
 
