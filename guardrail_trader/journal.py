@@ -15,6 +15,7 @@ Tables
   stops          protective STP orders at IBKR, one active per held line, identified by permId (T5)
   stop_history   every placement / raise / resize / cancel of a stop
   stop_fills     stop executions already booked (by IBKR execId, so a fill is never booked twice)
+  benchmark      IWDA held 100% from day 1 (CLAUDE.md §1): virtual units bought with every deposit, NAV per day (T7)
   closed_trades  one row per exit (stop, kill, voluntary sale): entry, exit, P&L net, motif, pocket, confidence,
                  duration, slippage allowance and success (T5, enriched by T6)
 
@@ -79,6 +80,10 @@ CREATE TABLE IF NOT EXISTS closed_trades (
   quantity REAL NOT NULL, entry_price REAL, exit_price REAL NOT NULL, pnl_net_base REAL, motif TEXT NOT NULL,
   perm_id INTEGER, broker_order_id INTEGER
 );
+CREATE TABLE IF NOT EXISTS benchmark (
+  date TEXT PRIMARY KEY, price_base REAL NOT NULL, units REAL NOT NULL, nav_base REAL NOT NULL, ts TEXT NOT NULL,
+  invested_base REAL NOT NULL DEFAULT 0
+);
 CREATE TABLE IF NOT EXISTS tier_log (
   id INTEGER PRIMARY KEY, ts TEXT NOT NULL, from_tier TEXT, to_tier TEXT NOT NULL, drawdown_pct REAL, pause_until TEXT
 );
@@ -107,7 +112,7 @@ MIGRATIONS = [
     ("closed_trades", "poche", "TEXT"), ("closed_trades", "confiance", "REAL"), ("closed_trades", "duree_jours", "INTEGER"),
     ("closed_trades", "entry_proposal_id", "INTEGER"), ("closed_trades", "exit_proposal_id", "INTEGER"),
     ("closed_trades", "slippage_base", "REAL"), ("closed_trades", "reussite", "INTEGER"),
-    ("closed_trades", "pnl_vs_benchmark_pct", "REAL"),        # secondary, filled once T7 provides IWDA
+    ("closed_trades", "pnl_vs_benchmark_pct", "REAL"),        # secondary: trade return - IWDA return, in points (T7)
 ]
 DECISION_COLUMNS = ("these", "catalyseur", "fiabilite", "horizon_jours", "stop_pct", "objectif_pct", "invalidation",
                     "confiance", "sources", "motif_sortie")
@@ -227,6 +232,45 @@ class Journal:
         self._set("peak_base", repr(peak))
         self._set("last_value_base", repr(value_base))
         return peak
+
+    # -- benchmark (T7) -------------------------------------------------------------
+    def benchmark_units(self) -> float:
+        return float(self._get("benchmark_units", "0"))
+
+    def invest_benchmark(self, price_base: float) -> float:
+        """Buy virtual benchmark units with every deposit not yet invested, at `price_base` (base currency).
+        At init this is the whole capital; a later top-up is invested at the next snapshot. Returns the amount."""
+        if not (price_base > 0):
+            raise ValueError(f"benchmark price must be > 0, got {price_base!r}")
+        pending = self.total_deposits() - float(self._get("benchmark_invested", "0"))
+        if pending <= 0.005:
+            return 0.0
+        self._set("benchmark_units", repr(self.benchmark_units() + pending / price_base))
+        self._set("benchmark_invested", repr(self.total_deposits()))
+        return pending
+
+    def record_benchmark(self, price_base: float, day: date | None = None) -> float:
+        """The day's benchmark NAV (the last snapshot of the day wins, like nav_daily); a top-up not yet
+        invested is invested first, and counted as that day's flow (invested_base). Returns the NAV."""
+        day = day or datetime.now(TZ).date()
+        invested = self.invest_benchmark(price_base) if self.benchmark_units() > 0 else 0.0
+        units = self.benchmark_units()
+        if units <= 0:
+            raise RuntimeError("benchmark not started; journal_cli.py init buys its units")
+        nav = units * price_base
+        with self.db:
+            self.db.execute("INSERT INTO benchmark(date,price_base,units,nav_base,ts,invested_base) VALUES(?,?,?,?,?,?) "
+                            "ON CONFLICT(date) DO UPDATE SET price_base=excluded.price_base, units=excluded.units, "
+                            "nav_base=excluded.nav_base, ts=excluded.ts, "
+                            "invested_base=benchmark.invested_base + excluded.invested_base",
+                            (day.isoformat(), price_base, units, nav, _now(), invested))
+        return nav
+
+    def benchmark_price_on(self, day: date) -> float | None:
+        """The last benchmark price known on or before `day` (holidays carry the previous close)."""
+        row = self.db.execute("SELECT price_base FROM benchmark WHERE date <= ? ORDER BY date DESC LIMIT 1",
+                              (day.isoformat(),)).fetchone()
+        return row[0] if row else None
 
     # -- ledger -----------------------------------------------------------------
     def init_budget(self, amount: float, currency: str) -> None:
@@ -351,15 +395,21 @@ class Journal:
         entry = self._proposal(pos["proposal_id"]) if pos else None
         days = ((datetime.fromisoformat(exit_ts).date() - datetime.fromisoformat(pos["opened"]).date()).days
                 if pos else None)
+        vs_bench = None                     # trade return minus the benchmark's over the same days, in points
+        if pos and cost_per_share > 0:
+            b0 = self.benchmark_price_on(datetime.fromisoformat(pos["opened"]).date())
+            b1 = self.benchmark_price_on(datetime.fromisoformat(exit_ts).date())
+            if b0 and b1:
+                vs_bench = (pnl / (cost_per_share * quantity) - (b1 / b0 - 1)) * 100
         with self.db:
             return self.db.execute(
                 "INSERT INTO closed_trades(symbol,currency,entry_ts,exit_ts,quantity,entry_price,exit_price,"
                 "pnl_net_base,motif,perm_id,broker_order_id,poche,confiance,duree_jours,entry_proposal_id,"
-                "exit_proposal_id,slippage_base,reussite) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                "exit_proposal_id,slippage_base,reussite,pnl_vs_benchmark_pct) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 (symbol.upper(), currency.upper(), pos["opened"] if pos else None, exit_ts, quantity,
                  pos["cost"] / pos["qty"] if pos else None, price, pnl, motif, perm_id, broker_order_id,
                  entry["poche"] if entry else None, entry["confiance"] if entry else None, days,
-                 pos["proposal_id"] if pos else None, proposal_id, slip, int(pnl - slip > 0))).lastrowid
+                 pos["proposal_id"] if pos else None, proposal_id, slip, int(pnl - slip > 0), vs_bench)).lastrowid
 
     def _proposal(self, proposal_id: int | None) -> sqlite3.Row | None:
         if proposal_id is None:

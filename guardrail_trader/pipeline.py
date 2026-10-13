@@ -22,6 +22,7 @@ from guardrail_trader.config import PROJECT_ROOT
 from guardrail_trader.executor import execute
 from guardrail_trader.journal import Journal
 from guardrail_trader.market import daily_history, is_open, market_sessions, price_instruments, summarize_history
+from guardrail_trader.metrics import BENCHMARK_KEY
 from guardrail_trader.momentum import rank
 from guardrail_trader.risk import (
     Decision, MarketInfo, MomentumConfig, Proposal, RiskConfig, evaluate, instrument_key, kill_switch_triggered,
@@ -55,6 +56,11 @@ class IBKRMarketData:
 
     def price_all(self) -> dict[str, float]:
         return price_instruments(self.broker, list(self.cfg.universe.values()))
+
+    def benchmark_price(self, key: str) -> float | None:
+        """Latest price of the benchmark ETF (instrument currency), None if unknown. Never in the universe."""
+        inst = self.cfg.hedge.get(key) or self.cfg.universe.get(key)
+        return None if inst is None else price_instruments(self.broker, [inst]).get(key)
 
     def market_open(self, now: datetime) -> bool:
         return is_open(market_sessions(self.broker, next(iter(self.cfg.universe.values()))), now)
@@ -101,6 +107,24 @@ class LLMSetup:
     monthly_budget_usd: float = 2.50
     request_timeout_s: float = 60.0
     max_seconds: float | None = None         # agent loop budget; None = agent default
+
+
+def record_benchmark(j: Journal, market, cfg: RiskConfig, fx: dict[str, float], today, log) -> None:
+    """The day's IWDA NAV next to the bot's (T7); the last run of the day wins, so us_close sets the close.
+    Never blocks a run: a missing price is logged and the day is carried forward in the metrics."""
+    if j.benchmark_units() <= 0 or not hasattr(market, "benchmark_price"):
+        return
+    try:
+        inst = cfg.hedge.get(BENCHMARK_KEY) or cfg.universe.get(BENCHMARK_KEY)
+        px = market.benchmark_price(BENCHMARK_KEY)
+        rate = fx.get(inst.currency) if inst else None
+        if px is None or not rate:
+            log(f"benchmark: no {BENCHMARK_KEY} price this run; the last known value is carried")
+            return
+        nav = j.record_benchmark(px * rate, today)
+        log(f"benchmark {BENCHMARK_KEY} {px:,.2f}: NAV {nav:,.2f} {cfg.base_currency}")
+    except Exception as e:      # a benchmark problem is reported, never a reason to skip stops or trading
+        log(f"benchmark: snapshot failed ({e!r}); the last known value is carried")
 
 
 def _jsonable(obj):
@@ -215,6 +239,7 @@ def run_once(broker, market, j: Journal, cfg: RiskConfig, llm: LLMSetup, *, mode
 
         # Daily NAV (the day's last run wins) and drawdown tier (T4). The gate applies both.
         j.record_nav(state.value_base, today)
+        record_benchmark(j, market, cfg, fx, today, log)
         prev_tier, prev_until = j.tier()
         state.tier, state.pause_until = next_tier(prev_tier, prev_until, state.drawdown_pct, today, cfg)
         if j.set_tier(state.tier, state.pause_until, state.drawdown_pct):
