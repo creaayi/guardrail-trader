@@ -1,1 +1,329 @@
 symbol,exchange,currency,name,sector,country,source
+AAF,LSE,GBP,AIRTEL AFRICA PLC,Communications,GB,STOXX 600 GB00BKDRYJ47; cap unverified (index membership only); 2026-10-13
+AAL,LSE,GBP,ANGLO AMERICAN PLC,Basic Materials,GB,STOXX 600 GB00BTK05J60; cap unverified (index membership only); 2026-10-13
+AALB,AEB,EUR,AALBERTS,Industrial,NL,STOXX 600 NL0000852564; cap unverified (index membership only); 2026-10-13
+ABBN,EBS,CHF,ABB LTD,Industrial,CH,STOXX 600 CH0012221716; cap unverified (index membership only); 2026-10-13
+ABDN,LSE,GBP,ABERDEEN GROUP PLC,Financial,GB,STOXX 600 GB00BF8Q6K64; cap unverified (index membership only); 2026-10-13
+ABF,LSE,GBP,ASSOCIATED BRITISH FOODS PLC,"Consumer, Cyclical",GB,STOXX 600 GB0006731235; cap unverified (index membership only); 2026-10-13
+ABN,AEB,EUR,ABN AMRO BANK NV,Financial,NL,STOXX 600 NL0011540547; cap unverified (index membership only); 2026-10-13
+ABVX,SBF,EUR,ABIVAX SA,"Consumer, Non-cyclical",FR,STOXX 600 FR0012333284; cap unverified (index membership only); 2026-10-13
+AC,SBF,EUR,ACCOR SA,"Consumer, Cyclical",FR,STOXX 600 FR0000120404; cap unverified (index membership only); 2026-10-13
+ACA,SBF,EUR,CREDIT AGRICOLE SA,Financial,FR,STOXX 600 FR0000045072; cap unverified (index membership only); 2026-10-13
+ACLN,EBS,CHF,ACCELLERON N AG,Industrial,CH,STOXX 600 CH1169360919; cap unverified (index membership only); 2026-10-13
+AD,AEB,EUR,KONINKLIJKE AHOLD DELHAIZE,"Consumer, Non-cyclical",NL,STOXX 600 NL0011794037; cap unverified (index membership only); 2026-10-13
+ADEN,EBS,CHF,ADECCO GROUP AG,"Consumer, Non-cyclical",CH,STOXX 600 CH0012138605; cap unverified (index membership only); 2026-10-13
+ADM,LSE,GBP,ADMIRAL GROUP PLC,Financial,GB,STOXX 600 GB00B02J6398; cap unverified (index membership only); 2026-10-13
+ADP,SBF,EUR,AEROPORTS DE PARIS SA,Industrial,FR,STOXX 600 FR0010340141; cap unverified (index membership only); 2026-10-13
+ADS,IBIS,EUR,ADIDAS N AG,"Consumer, Cyclical",DE,STOXX 600 DE000A1EWWW0; cap unverified (index membership only); 2026-10-13
+ADYEN,AEB,EUR,ADYEN,"Consumer, Non-cyclical",NL,STOXX 600 NL0012969182; cap unverified (index membership only); 2026-10-13
+AG1,IBIS,EUR,AUTO1 GROUP,"Consumer, Cyclical",DE,STOXX 600 DE000A2LQ884; cap unverified (index membership only); 2026-10-13
+AGN,AEB,EUR,AEGON,Financial,BM,STOXX 600 BMG0112X1056; cap unverified (index membership only); 2026-10-13
+AI,SBF,EUR,LAIR LIQUIDE SOCIETE ANONYME POUR,Basic Materials,FR,STOXX 600 FR0000120073; cap unverified (index membership only); 2026-10-13
+AIR,SBF,EUR,AIRBUS,Industrial,NL,STOXX 600 NL0000235190; cap unverified (index membership only); 2026-10-13
+AIXA,IBIS,EUR,AIXTRON,Technology,DE,STOXX 600 DE000A0WMPJ6; cap unverified (index membership only); 2026-10-13
+AKE,SBF,EUR,ARKEMA SA,Basic Materials,FR,STOXX 600 FR0010313833; cap unverified (index membership only); 2026-10-13
+AKZA,AEB,EUR,AKZO NOBEL,Basic Materials,NL,STOXX 600 NL0013267909; cap unverified (index membership only); 2026-10-13
+ALC,EBS,CHF,ALCON AG,"Consumer, Non-cyclical",CH,STOXX 600 CH0432492467; cap unverified (index membership only); 2026-10-13
+ALLFG,AEB,EUR,ALLFUNDS GROUP PLC,Financial,GB,STOXX 600 GB00BNTJ3546; cap unverified (index membership only); 2026-10-13
+ALO,SBF,EUR,ALSTOM SA,Industrial,FR,STOXX 600 FR0010220475; cap unverified (index membership only); 2026-10-13
+ALV,IBIS,EUR,ALLIANZ,Financial,DE,STOXX 600 DE0008404005; cap unverified (index membership only); 2026-10-13
+AM,SBF,EUR,DASSAULT AVIATION SA,Industrial,FR,STOXX 600 FR0014004L86; cap unverified (index membership only); 2026-10-13
+AMUN,SBF,EUR,AMUNDI SA,Financial,FR,STOXX 600 FR0004125920; cap unverified (index membership only); 2026-10-13
+ANTO,LSE,GBP,ANTOFAGASTA PLC,Basic Materials,GB,STOXX 600 GB0000456144; cap unverified (index membership only); 2026-10-13
+ARCAD,AEB,EUR,ARCADIS NV,Industrial,NL,STOXX 600 NL0006237562; cap unverified (index membership only); 2026-10-13
+ASM,AEB,EUR,ASM INTERNATIONAL NV,Technology,NL,STOXX 600 NL0000334118; cap unverified (index membership only); 2026-10-13
+ASML,AEB,EUR,ASML HOLDING,Technology,NL,STOXX 600 NL0010273215; cap unverified (index membership only); 2026-10-13
+ASRNL,AEB,EUR,ASR NEDERLAND,Financial,NL,STOXX 600 NL0011872643; cap unverified (index membership only); 2026-10-13
+AUTO,LSE,GBP,AUTOTRADER GROUP PLC,Communications,GB,STOXX 600 GB00BVYVFW23; cap unverified (index membership only); 2026-10-13
+AV.,LSE,GBP,AVIVA PLC,Financial,GB,STOXX 600 GB00BPQY8M80; cap unverified (index membership only); 2026-10-13
+AVOL,EBS,CHF,AVOLTA AG,"Consumer, Cyclical",CH,STOXX 600 CH0023405456; cap unverified (index membership only); 2026-10-13
+AYV,SBF,EUR,AYVENS SA,"Consumer, Non-cyclical",FR,STOXX 600 FR0013258662; cap unverified (index membership only); 2026-10-13
+AZN,LSE,GBP,ASTRAZENECA PLC,"Consumer, Non-cyclical",GB,STOXX 600 GB0009895292; cap unverified (index membership only); 2026-10-13
+BA.,LSE,GBP,BAE SYSTEMS PLC,Industrial,GB,STOXX 600 GB0002634946; cap unverified (index membership only); 2026-10-13
+BAB,LSE,GBP,BABCOCK INTERNATIONAL GROUP PLC,"Consumer, Non-cyclical",GB,STOXX 600 GB0009697037; cap unverified (index membership only); 2026-10-13
+BAER,EBS,CHF,JULIUS BAER GRUPPE AG,Financial,CH,STOXX 600 CH0102484968; cap unverified (index membership only); 2026-10-13
+BAMNB,AEB,EUR,BAM GROEP KONINKLIJKE NV,Industrial,NL,STOXX 600 NL0000337319; cap unverified (index membership only); 2026-10-13
+BARC,LSE,GBP,BARCLAYS PLC,Financial,GB,STOXX 600 GB0031348658; cap unverified (index membership only); 2026-10-13
+BARN,EBS,CHF,BARRY CALLEBAUT AG,"Consumer, Non-cyclical",CH,STOXX 600 CH0009002962; cap unverified (index membership only); 2026-10-13
+BAS,IBIS,EUR,BASF N,Basic Materials,DE,STOXX 600 DE000BASF111; cap unverified (index membership only); 2026-10-13
+BATS,LSE,GBP,BRITISH AMERICAN TOBACCO,"Consumer, Non-cyclical",GB,STOXX 600 GB0002875804; cap unverified (index membership only); 2026-10-13
+BAYN,IBIS,EUR,BAYER AG,"Consumer, Non-cyclical",DE,STOXX 600 DE000BAY0017; cap unverified (index membership only); 2026-10-13
+BBOX,LSE,GBP,TRITAX BIG BOX REIT PLC,Financial,GB,STOXX 600 GB00BG49KP99; cap unverified (index membership only); 2026-10-13
+BBY,LSE,GBP,BALFOUR BEATTY PLC,Industrial,GB,STOXX 600 GB0000961622; cap unverified (index membership only); 2026-10-13
+BC8,IBIS,EUR,BECHTLE AG,Technology,DE,STOXX 600 DE0005158703; cap unverified (index membership only); 2026-10-13
+BEAN,EBS,CHF,BELIMO N AG,Industrial,CH,STOXX 600 CH1101098163; cap unverified (index membership only); 2026-10-13
+BEI,IBIS,EUR,BEIERSDORF AG,"Consumer, Non-cyclical",DE,STOXX 600 DE0005200000; cap unverified (index membership only); 2026-10-13
+BESI,AEB,EUR,BE SEMICONDUCTOR INDUSTRIES NV,Technology,NL,STOXX 600 NL0012866412; cap unverified (index membership only); 2026-10-13
+BGEO,LSE,GBP,LION FINANCE GROUP PLC,Financial,GB,STOXX 600 GB00BF4HYT85; cap unverified (index membership only); 2026-10-13
+BIM,SBF,EUR,BIOMERIEUX SA,"Consumer, Non-cyclical",FR,STOXX 600 FR0013280286; cap unverified (index membership only); 2026-10-13
+BKG,LSE,GBP,BERKELEY GROUP HOLDINGS (THE),"Consumer, Cyclical",GB,STOXX 600 GB00BP0RGD03; cap unverified (index membership only); 2026-10-13
+BLND,LSE,GBP,BRITISH LAND REIT,Financial,GB,STOXX 600 GB0001367019; cap unverified (index membership only); 2026-10-13
+BMW,IBIS,EUR,BMW,"Consumer, Cyclical",DE,STOXX 600 DE0005190003; cap unverified (index membership only); 2026-10-13
+BN,SBF,EUR,DANONE SA,"Consumer, Non-cyclical",FR,STOXX 600 FR0000120644; cap unverified (index membership only); 2026-10-13
+BNP,SBF,EUR,BNP PARIBAS SA,Financial,FR,STOXX 600 FR0000131104; cap unverified (index membership only); 2026-10-13
+BNR,IBIS,EUR,BRENNTAG,Basic Materials,DE,STOXX 600 DE000A1DAHH0; cap unverified (index membership only); 2026-10-13
+BNZL,LSE,GBP,BUNZL,"Consumer, Cyclical",GB,STOXX 600 GB00B0744B38; cap unverified (index membership only); 2026-10-13
+BOL,SBF,EUR,BOLLORE,Energy,FR,STOXX 600 FR0000039299; cap unverified (index membership only); 2026-10-13
+BP.,LSE,GBP,BP PLC,Energy,GB,STOXX 600 GB0007980591; cap unverified (index membership only); 2026-10-13
+BPT,LSE,GBP,BRIDGEPOINT GROUP PLC,Financial,GB,STOXX 600 GB00BND88V85; cap unverified (index membership only); 2026-10-13
+BRBY,LSE,GBP,BURBERRY GROUP PLC,"Consumer, Cyclical",GB,STOXX 600 GB0031743007; cap unverified (index membership only); 2026-10-13
+BT.A,LSE,GBP,BT GROUP PLC,Communications,GB,STOXX 600 GB0030913577; cap unverified (index membership only); 2026-10-13
+BTRW,LSE,GBP,BARRATT REDROW PLC,"Consumer, Cyclical",GB,STOXX 600 GB0000811801; cap unverified (index membership only); 2026-10-13
+BVI,SBF,EUR,BUREAU VERITAS SA,"Consumer, Non-cyclical",FR,STOXX 600 FR0006174348; cap unverified (index membership only); 2026-10-13
+BWY,LSE,GBP,BELLWAY PLC,"Consumer, Cyclical",GB,STOXX 600 GB0000904986; cap unverified (index membership only); 2026-10-13
+CA,SBF,EUR,CARREFOUR SA,"Consumer, Non-cyclical",FR,STOXX 600 FR0000120172; cap unverified (index membership only); 2026-10-13
+CAP,SBF,EUR,CAPGEMINI,Technology,FR,STOXX 600 FR0000125338; cap unverified (index membership only); 2026-10-13
+CBK,IBIS,EUR,COMMERZBANK AG,Financial,DE,STOXX 600 DE000CBK1001; cap unverified (index membership only); 2026-10-13
+CCC,LSE,GBP,COMPUTACENTER PLC,Technology,GB,STOXX 600 GB00BV9FP302; cap unverified (index membership only); 2026-10-13
+CCH,LSE,GBP,COCA COLA HBC AG,"Consumer, Non-cyclical",CH,STOXX 600 CH0198251305; cap unverified (index membership only); 2026-10-13
+CFR,EBS,CHF,COMPAGNIE FINANCIERE RICHEMONT SA,"Consumer, Cyclical",CH,STOXX 600 CH0210483332; cap unverified (index membership only); 2026-10-13
+CNA,LSE,GBP,CENTRICA PLC,Utilities,GB,STOXX 600 GB00B033F229; cap unverified (index membership only); 2026-10-13
+CON,IBIS,EUR,CONTINENTAL AG,"Consumer, Cyclical",DE,STOXX 600 DE0005439004; cap unverified (index membership only); 2026-10-13
+COTN,EBS,CHF,COMET HOLDING AG,Industrial,CH,STOXX 600 CH0360826991; cap unverified (index membership only); 2026-10-13
+COV,SBF,EUR,COVIVIO SA,Financial,FR,STOXX 600 FR0000064578; cap unverified (index membership only); 2026-10-13
+CPG,LSE,USD,COMPASS GROUP PLC,"Consumer, Cyclical",GB,STOXX 600 GB00BD6K4575; cap unverified (index membership only); 2026-10-13
+CRDA,LSE,GBP,CRODA INTERNATIONAL PLC,Basic Materials,GB,STOXX 600 GB00BJFFLV09; cap unverified (index membership only); 2026-10-13
+CS,SBF,EUR,AXA SA,Financial,FR,STOXX 600 FR0000120628; cap unverified (index membership only); 2026-10-13
+CSG1,AEB,EUR,CSG CLASS A NV,Industrial,NL,STOXX 600 NL0015073TS8; cap unverified (index membership only); 2026-10-13
+CTEC,LSE,GBP,CONVATEC GROUP PLC,"Consumer, Non-cyclical",GB,STOXX 600 GB00BD3VFW73; cap unverified (index membership only); 2026-10-13
+CVC,AEB,EUR,CVC CAPITAL PARTNERS PLC,Financial,JE,STOXX 600 JE00BRX98089; cap unverified (index membership only); 2026-10-13
+CWK,LSE,GBP,CRANSWICK PLC,"Consumer, Non-cyclical",GB,STOXX 600 GB0002318888; cap unverified (index membership only); 2026-10-13
+DB1,IBIS,EUR,DEUTSCHE BOERSE AG,Financial,DE,STOXX 600 DE0005810055; cap unverified (index membership only); 2026-10-13
+DBK,IBIS,EUR,DEUTSCHE BANK AG,Financial,DE,STOXX 600 DE0005140008; cap unverified (index membership only); 2026-10-13
+DCC,LSE,GBP,DCC ENERGY PLC,Energy,IE,STOXX 600 IE0002424939; cap unverified (index membership only); 2026-10-13
+DG,SBF,EUR,VINCI SA,Industrial,FR,STOXX 600 FR0000125486; cap unverified (index membership only); 2026-10-13
+DGE,LSE,GBP,DIAGEO PLC,"Consumer, Non-cyclical",GB,STOXX 600 GB0002374006; cap unverified (index membership only); 2026-10-13
+DHER,IBIS,EUR,DELIVERY HERO,Communications,DE,STOXX 600 DE000A2E4K43; cap unverified (index membership only); 2026-10-13
+DHL,IBIS,EUR,DHL N AG,Industrial,DE,STOXX 600 DE0005552004; cap unverified (index membership only); 2026-10-13
+DIM,SBF,EUR,SARTORIUS STEDIM BIOTECH SA,"Consumer, Non-cyclical",FR,STOXX 600 FR0013154002; cap unverified (index membership only); 2026-10-13
+DPLM,LSE,GBP,DIPLOMA PLC,Industrial,GB,STOXX 600 GB0001826634; cap unverified (index membership only); 2026-10-13
+DSFIR,AEB,EUR,DSM FIRMENICH AG,Basic Materials,CH,STOXX 600 CH1216478797; cap unverified (index membership only); 2026-10-13
+DSY,SBF,EUR,DASSAULT SYSTEMES,Technology,FR,STOXX 600 FR0014003TT8; cap unverified (index membership only); 2026-10-13
+DTE,IBIS,EUR,DEUTSCHE TELEKOM N AG,Communications,DE,STOXX 600 DE0005557508; cap unverified (index membership only); 2026-10-13
+DTG,IBIS,EUR,DAIMLER TRUCK HOLDING E AG,"Consumer, Cyclical",DE,STOXX 600 DE000DTR0CK8; cap unverified (index membership only); 2026-10-13
+EDEN,SBF,EUR,EDENRED,"Consumer, Non-cyclical",FR,STOXX 600 FR0010908533; cap unverified (index membership only); 2026-10-13
+EDV,LSE,GBP,ENDEAVOUR MINING,Basic Materials,GB,STOXX 600 GB00BL6K5J42; cap unverified (index membership only); 2026-10-13
+EL,SBF,EUR,ESSILORLUXOTTICA SA,"Consumer, Non-cyclical",FR,STOXX 600 FR0000121667; cap unverified (index membership only); 2026-10-13
+ELIS,SBF,EUR,ELIS SA,"Consumer, Non-cyclical",FR,STOXX 600 FR0012435121; cap unverified (index membership only); 2026-10-13
+EMSN,EBS,CHF,EMS-CHEMIE HOLDING AG,Basic Materials,CH,STOXX 600 CH0016440353; cap unverified (index membership only); 2026-10-13
+EN,SBF,EUR,BOUYGUES SA,Industrial,FR,STOXX 600 FR0000120503; cap unverified (index membership only); 2026-10-13
+ENGI,SBF,EUR,ENGIE SA,Utilities,FR,STOXX 600 FR0010208488; cap unverified (index membership only); 2026-10-13
+ENR,IBIS,EUR,SIEMENS ENERGY N AG,Industrial,DE,STOXX 600 DE000ENER6Y0; cap unverified (index membership only); 2026-10-13
+ENT,LSE,GBP,ENTAIN PLC,"Consumer, Cyclical",IM,STOXX 600 IM00B5VQMV65; cap unverified (index membership only); 2026-10-13
+ENX,SBF,EUR,EURONEXT NV,Financial,NL,STOXX 600 NL0006294274; cap unverified (index membership only); 2026-10-13
+EOAN,IBIS,EUR,E.ON N,Utilities,DE,STOXX 600 DE000ENAG999; cap unverified (index membership only); 2026-10-13
+ERF,SBF,EUR,EUROFINS SCIENTIFIC,"Consumer, Non-cyclical",FR,STOXX 600 FR0014000MR3; cap unverified (index membership only); 2026-10-13
+EVD,IBIS,EUR,CTS EVENTIM AG,"Consumer, Cyclical",DE,STOXX 600 DE0005470306; cap unverified (index membership only); 2026-10-13
+EVK,IBIS,EUR,EVONIK INDUSTRIES AG,Basic Materials,DE,STOXX 600 DE000EVNK013; cap unverified (index membership only); 2026-10-13
+EXO,AEB,EUR,EXOR NV,Financial,NL,STOXX 600 NL0012059018; cap unverified (index membership only); 2026-10-13
+EXPN,LSE,GBP,EXPERIAN PLC,"Consumer, Non-cyclical",GB,STOXX 600 GB00B19NLV48; cap unverified (index membership only); 2026-10-13
+EZJ,LSE,GBP,EASYJET,"Consumer, Cyclical",GB,STOXX 600 GB00B7KR2P84; cap unverified (index membership only); 2026-10-13
+FGR,SBF,EUR,EIFFAGE SA,Industrial,FR,STOXX 600 FR0000130452; cap unverified (index membership only); 2026-10-13
+FHZN,EBS,CHF,FLUGHAFEN ZUERICH AG,Industrial,CH,STOXX 600 CH0319416936; cap unverified (index membership only); 2026-10-13
+FME,IBIS,EUR,FRESENIUS MEDICAL CARE AG,"Consumer, Non-cyclical",DE,STOXX 600 DE0005785802; cap unverified (index membership only); 2026-10-13
+FNTN,IBIS,EUR,FREENET AG,Communications,DE,STOXX 600 DE000A0Z2ZZ5; cap unverified (index membership only); 2026-10-13
+FR,SBF,EUR,VALEO,"Consumer, Cyclical",FR,STOXX 600 FR0013176526; cap unverified (index membership only); 2026-10-13
+FRE,IBIS,EUR,FRESENIUS N,"Consumer, Non-cyclical",DE,STOXX 600 DE000FRE5EN2; cap unverified (index membership only); 2026-10-13
+FRES,LSE,GBP,FRESNILLO PLC,Basic Materials,GB,STOXX 600 GB00B2QPKJ12; cap unverified (index membership only); 2026-10-13
+FTK,IBIS,EUR,FLATEXDEGIRO N,Financial,DE,STOXX 600 DE000FTG1111; cap unverified (index membership only); 2026-10-13
+G1A,IBIS,EUR,GEA GROUP AG,Industrial,DE,STOXX 600 DE0006602006; cap unverified (index membership only); 2026-10-13
+G24,IBIS,EUR,SCOUT24 N,Communications,DE,STOXX 600 DE000A12DM80; cap unverified (index membership only); 2026-10-13
+GALD,EBS,CHF,GALDERMA GROUP N AG,"Consumer, Non-cyclical",CH,STOXX 600 CH1335392721; cap unverified (index membership only); 2026-10-13
+GAW,LSE,GBP,GAMES WORKSHOP GROUP PLC,"Consumer, Cyclical",GB,STOXX 600 GB0003718474; cap unverified (index membership only); 2026-10-13
+GBF,IBIS,EUR,BILFINGER,Industrial,DE,STOXX 600 DE0005909006; cap unverified (index membership only); 2026-10-13
+GEBN,EBS,CHF,GEBERIT AG,Industrial,CH,STOXX 600 CH0030170408; cap unverified (index membership only); 2026-10-13
+GET,SBF,EUR,GETLINK,Industrial,FR,STOXX 600 FR0010533075; cap unverified (index membership only); 2026-10-13
+GF,EBS,CHF,GEORG FISCHER AG,Industrial,CH,STOXX 600 CH1169151003; cap unverified (index membership only); 2026-10-13
+GFC,SBF,EUR,GECINA SA,Financial,FR,STOXX 600 FR0010040865; cap unverified (index membership only); 2026-10-13
+GIVN,EBS,CHF,GIVAUDAN SA,Basic Materials,CH,STOXX 600 CH0010645932; cap unverified (index membership only); 2026-10-13
+GLE,SBF,EUR,SOCIETE GENERALE SA,Financial,FR,STOXX 600 FR0000130809; cap unverified (index membership only); 2026-10-13
+GLEN,LSE,GBP,GLENCORE PLC,Basic Materials,JE,STOXX 600 JE00B4T3BW64; cap unverified (index membership only); 2026-10-13
+GSK,LSE,GBP,GLAXOSMITHKLINE,"Consumer, Non-cyclical",GB,STOXX 600 GB00BN7SWP63; cap unverified (index membership only); 2026-10-13
+GTT,SBF,EUR,GAZTRANSPORT & TECHNIGAZ SA,Energy,FR,STOXX 600 FR0011726835; cap unverified (index membership only); 2026-10-13
+HAG,IBIS,EUR,HENSOLDT AG,Industrial,DE,STOXX 600 DE000HAG0005; cap unverified (index membership only); 2026-10-13
+HBAN,EBS,CHF,HELVETIA BALOISE HOLDING N AG,Financial,CH,STOXX 600 CH0466642201; cap unverified (index membership only); 2026-10-13
+HEI,IBIS,EUR,HEIDELBERG MATERIALS AG,Industrial,DE,STOXX 600 DE0006047004; cap unverified (index membership only); 2026-10-13
+HEIA,AEB,EUR,HEINEKEN NV,"Consumer, Non-cyclical",NL,STOXX 600 NL0000009165; cap unverified (index membership only); 2026-10-13
+HEIO,AEB,EUR,HEINEKEN HOLDING NV,"Consumer, Non-cyclical",NL,STOXX 600 NL0000008977; cap unverified (index membership only); 2026-10-13
+HEN3,IBIS,EUR,HENKEL & KGAA PREF AG,"Consumer, Non-cyclical",DE,STOXX 600 DE0006048432; cap unverified (index membership only); 2026-10-13
+HILS,LSE,GBP,HILL AND SMITH PLC,Industrial,GB,STOXX 600 GB0004270301; cap unverified (index membership only); 2026-10-13
+HLMA,LSE,GBP,HALMA PLC,Industrial,GB,STOXX 600 GB0004052071; cap unverified (index membership only); 2026-10-13
+HLN,LSE,GBP,HALEON PLC,"Consumer, Non-cyclical",GB,STOXX 600 GB00BMX86B70; cap unverified (index membership only); 2026-10-13
+HNR1,IBIS,EUR,HANNOVER RUECK,Financial,DE,STOXX 600 DE0008402215; cap unverified (index membership only); 2026-10-13
+HO,SBF,EUR,THALES SA,Industrial,FR,STOXX 600 FR0000121329; cap unverified (index membership only); 2026-10-13
+HOC,LSE,GBP,HOCHSCHILD MINING PLC,Basic Materials,GB,STOXX 600 GB00B1FW5029; cap unverified (index membership only); 2026-10-13
+HOLN,EBS,CHF,HOLCIM LTD AG,Industrial,CH,STOXX 600 CH0012214059; cap unverified (index membership only); 2026-10-13
+HOT,IBIS,EUR,HOCHTIEF AG,Industrial,DE,STOXX 600 DE0006070006; cap unverified (index membership only); 2026-10-13
+HSBA,LSE,GBP,HSBC HOLDINGS PLC,Financial,GB,STOXX 600 GB0005405286; cap unverified (index membership only); 2026-10-13
+HSX,LSE,GBP,HISCOX LTD,Financial,BM,STOXX 600 BMG4593F1389; cap unverified (index membership only); 2026-10-13
+HUBN,EBS,CHF,HUBER & SUHNER AG,Industrial,CH,STOXX 600 CH0030380734; cap unverified (index membership only); 2026-10-13
+HWDN,LSE,GBP,HOWDEN JOINERY GROUP PLC,"Consumer, Cyclical",GB,STOXX 600 GB0005576813; cap unverified (index membership only); 2026-10-13
+IAG,LSE,GBP,INTERNATIONAL AIRLINES GROUP,"Consumer, Cyclical",ES,STOXX 600 ES0177542018; cap unverified (index membership only); 2026-10-13
+ICG,LSE,GBP,ICG PLC,Financial,GB,STOXX 600 GB00BYT1DJ19; cap unverified (index membership only); 2026-10-13
+IFCN,EBS,CHF,INFICON HOLDING AG,Industrial,CH,STOXX 600 CH1431598916; cap unverified (index membership only); 2026-10-13
+IFX,IBIS,EUR,INFINEON TECHNOLOGIES AG,Technology,DE,STOXX 600 DE0006231004; cap unverified (index membership only); 2026-10-13
+IGG,LSE,GBP,IG GROUP HOLDINGS PLC,Financial,GB,STOXX 600 GB00B06QFB75; cap unverified (index membership only); 2026-10-13
+IHGL,LSE,USD,INTERCONTINENTAL HOTELS GROUP PLC,"Consumer, Cyclical",GB,STOXX 600 GB00BHJYC057; cap unverified (index membership only); 2026-10-13
+III,LSE,GBP,3I GROUP FUND PLC,Financial,GB,STOXX 600 GB00B1YW4409; cap unverified (index membership only); 2026-10-13
+IMB,LSE,GBP,IMPERIAL BRANDS PLC,"Consumer, Non-cyclical",GB,STOXX 600 GB0004544929; cap unverified (index membership only); 2026-10-13
+IMCD,AEB,EUR,IMCD,"Consumer, Cyclical",NL,STOXX 600 NL0010801007; cap unverified (index membership only); 2026-10-13
+IMI,LSE,GBP,IMI PLC,Industrial,GB,STOXX 600 GB00BGLP8L22; cap unverified (index membership only); 2026-10-13
+INCH,LSE,GBP,INCHCAPE PLC,"Consumer, Cyclical",GB,STOXX 600 GB00B61TVQ02; cap unverified (index membership only); 2026-10-13
+INF,LSE,GBP,INFORMA PLC,Communications,GB,STOXX 600 GB00BMJ6DW54; cap unverified (index membership only); 2026-10-13
+INGA,AEB,EUR,ING GROEP,Financial,NL,STOXX 600 NL0011821202; cap unverified (index membership only); 2026-10-13
+INVP,LSE,GBP,INVESTEC PLC,Financial,GB,STOXX 600 GB00B17BBQ50; cap unverified (index membership only); 2026-10-13
+IPN,SBF,EUR,IPSEN SA,"Consumer, Non-cyclical",FR,STOXX 600 FR0010259150; cap unverified (index membership only); 2026-10-13
+ITRK,LSE,GBP,INTERTEK GROUP PLC,"Consumer, Non-cyclical",GB,STOXX 600 GB0031638363; cap unverified (index membership only); 2026-10-13
+ITV,LSE,GBP,ITV PLC,"Consumer, Cyclical",GB,STOXX 600 GB0033986497; cap unverified (index membership only); 2026-10-13
+JMAT,LSE,GBP,JOHNSON MATTHEY PLC,Basic Materials,GB,STOXX 600 GB00BTQHVY80; cap unverified (index membership only); 2026-10-13
+KBX,IBIS,EUR,KNORR BREMSE AG,Industrial,DE,STOXX 600 DE000KBX1006; cap unverified (index membership only); 2026-10-13
+KER,SBF,EUR,KERING SA,"Consumer, Cyclical",FR,STOXX 600 FR0000121485; cap unverified (index membership only); 2026-10-13
+KGF,LSE,GBP,KINGFISHER PLC,"Consumer, Cyclical",GB,STOXX 600 GB0033195214; cap unverified (index membership only); 2026-10-13
+KGX,IBIS,EUR,KION GROUP AG,Industrial,DE,STOXX 600 DE000KGX8881; cap unverified (index membership only); 2026-10-13
+KNIN,EBS,CHF,KUEHNE UND NAGEL INTERNATIONAL AG,Industrial,CH,STOXX 600 CH0025238863; cap unverified (index membership only); 2026-10-13
+KPN,AEB,EUR,KONINKLIJKE KPN NV,Communications,NL,STOXX 600 NL0000009082; cap unverified (index membership only); 2026-10-13
+LAND,LSE,GBP,LAND SECURITIES GROUP REIT PLC,Financial,GB,STOXX 600 GB00BYW0PQ60; cap unverified (index membership only); 2026-10-13
+LEG,IBIS,EUR,LEG IMMOBILIEN N,Financial,DE,STOXX 600 DE000LEG1110; cap unverified (index membership only); 2026-10-13
+LGEN,LSE,GBP,LEGAL AND GENERAL GROUP PLC,Financial,GB,STOXX 600 GB0005603997; cap unverified (index membership only); 2026-10-13
+LHA,IBIS,EUR,DEUTSCHE LUFTHANSA AG,"Consumer, Cyclical",DE,STOXX 600 DE0008232125; cap unverified (index membership only); 2026-10-13
+LI,SBF,EUR,KLEPIERRE REIT SA,Financial,FR,STOXX 600 FR0000121964; cap unverified (index membership only); 2026-10-13
+LISP,EBS,CHF,CHOCOLADEFABRIKEN LINDT & SPRUENGL,"Consumer, Non-cyclical",CH,STOXX 600 CH0010570767; cap unverified (index membership only); 2026-10-13
+LLOY,LSE,GBP,LLOYDS BANKING GROUP PLC,Financial,GB,STOXX 600 GB0008706128; cap unverified (index membership only); 2026-10-13
+LMP,LSE,GBP,LONDONMETRIC PROPERTY REIT PLC,Financial,GB,STOXX 600 GB00B4WFW713; cap unverified (index membership only); 2026-10-13
+LOGN,EBS,CHF,LOGITECH INTERNATIONAL,Technology,CH,STOXX 600 CH0025751329; cap unverified (index membership only); 2026-10-13
+LONN,EBS,CHF,LONZA GROUP AG,"Consumer, Non-cyclical",CH,STOXX 600 CH0013841017; cap unverified (index membership only); 2026-10-13
+LR,SBF,EUR,LEGRAND SA,Industrial,FR,STOXX 600 FR0010307819; cap unverified (index membership only); 2026-10-13
+LSEG,LSE,GBP,LONDON STOCK EXCHANGE GROUP PLC,Financial,GB,STOXX 600 GB00B0SWJX34; cap unverified (index membership only); 2026-10-13
+MBG,IBIS,EUR,MERCEDES-BENZ GROUP N AG,"Consumer, Cyclical",DE,STOXX 600 DE0007100000; cap unverified (index membership only); 2026-10-13
+MC,SBF,EUR,LVMH,"Consumer, Cyclical",FR,STOXX 600 FR0000121014; cap unverified (index membership only); 2026-10-13
+MICC,AEB,EUR,MAGNUM ICE CREAM,"Consumer, Non-cyclical",NL,STOXX 600 NL0015002MS2; cap unverified (index membership only); 2026-10-13
+MKS,LSE,GBP,MARKS AND SPENCER GROUP PLC,"Consumer, Non-cyclical",GB,STOXX 600 GB0031274896; cap unverified (index membership only); 2026-10-13
+ML,SBF,EUR,MICHELIN,"Consumer, Cyclical",FR,STOXX 600 FR001400AJ45; cap unverified (index membership only); 2026-10-13
+MNDI,LSE,GBP,MONDI PLC,Basic Materials,GB,STOXX 600 GB00BMWC6P49; cap unverified (index membership only); 2026-10-13
+MNG,LSE,GBP,M&G FUND PLC,Financial,GB,STOXX 600 GB00BKFB1C65; cap unverified (index membership only); 2026-10-13
+MRK,IBIS,EUR,MERCK,"Consumer, Non-cyclical",DE,STOXX 600 DE0006599905; cap unverified (index membership only); 2026-10-13
+MRO,LSE,GBP,MELROSE INDUSTRIES PLC,Industrial,GB,STOXX 600 GB00BNGDN821; cap unverified (index membership only); 2026-10-13
+MT,AEB,EUR,ARCELORMITTAL SA,Basic Materials,LU,STOXX 600 LU1598757687; cap unverified (index membership only); 2026-10-13
+MTLN,LSE,EUR,METLEN ENERGY & METALS PLC,Utilities,GB,STOXX 600 GB00BTQGS779; cap unverified (index membership only); 2026-10-13
+MTX,IBIS,EUR,MTU AERO ENGINES HOLDING AG,Industrial,DE,STOXX 600 DE000A0D9PT0; cap unverified (index membership only); 2026-10-13
+MUV2,IBIS,EUR,MUENCHENER RUECKVERSICHERUNGS-GESE,Financial,DE,STOXX 600 DE0008430026; cap unverified (index membership only); 2026-10-13
+NDA,IBIS,EUR,AURUBIS AG,Basic Materials,DE,STOXX 600 DE0006766504; cap unverified (index membership only); 2026-10-13
+NDX1,IBIS,EUR,NORDEX,Energy,DE,STOXX 600 DE000A0D6554; cap unverified (index membership only); 2026-10-13
+NEM,IBIS,EUR,NEMETSCHEK,Technology,DE,STOXX 600 DE0006452907; cap unverified (index membership only); 2026-10-13
+NESN,EBS,CHF,NESTLE SA,"Consumer, Non-cyclical",CH,STOXX 600 CH0038863350; cap unverified (index membership only); 2026-10-13
+NEX,SBF,EUR,NEXANS SA,Industrial,FR,STOXX 600 FR0000044448; cap unverified (index membership only); 2026-10-13
+NG.,LSE,GBP,NATIONAL GRID PLC,Utilities,GB,STOXX 600 GB00BDR05C01; cap unverified (index membership only); 2026-10-13
+NN,AEB,EUR,NN GROUP,Financial,NL,STOXX 600 NL0010773842; cap unverified (index membership only); 2026-10-13
+NOVN,EBS,CHF,NOVARTIS AG,"Consumer, Non-cyclical",CH,STOXX 600 CH0012005267; cap unverified (index membership only); 2026-10-13
+NWG,LSE,GBP,NATWEST GROUP PLC,Financial,GB,STOXX 600 GB00BM8PJY71; cap unverified (index membership only); 2026-10-13
+NXT,LSE,GBP,NEXT PLC,"Consumer, Cyclical",GB,STOXX 600 GB0032089863; cap unverified (index membership only); 2026-10-13
+OR,SBF,EUR,LOREAL SA,"Consumer, Non-cyclical",FR,STOXX 600 FR0000120321; cap unverified (index membership only); 2026-10-13
+ORA,SBF,EUR,ORANGE SA,Communications,FR,STOXX 600 FR0000133308; cap unverified (index membership only); 2026-10-13
+P911,IBIS,EUR,DR ING HC F PORSCHE PRF AG,"Consumer, Cyclical",DE,STOXX 600 DE000PAG9113; cap unverified (index membership only); 2026-10-13
+PAF,LSE,GBP,PAN AFRICAN RESOURCES PLC,Basic Materials,GB,STOXX 600 GB0004300496; cap unverified (index membership only); 2026-10-13
+PAH3,IBIS,EUR,PORSCHE AUTOMOBIL HOLDING PREF,"Consumer, Cyclical",DE,STOXX 600 DE000PAH0038; cap unverified (index membership only); 2026-10-13
+PGHN,EBS,CHF,PARTNERS GROUP HOLDING AG,Financial,CH,STOXX 600 CH0024608827; cap unverified (index membership only); 2026-10-13
+PHIA,AEB,EUR,KONINKLIJKE PHILIPS,"Consumer, Non-cyclical",NL,STOXX 600 NL0000009538; cap unverified (index membership only); 2026-10-13
+PHP,LSE,GBP,PRIMARY HEALTH PROPERTIES REIT PLC,Financial,GB,STOXX 600 GB00BYRJ5J14; cap unverified (index membership only); 2026-10-13
+PLUS,LSE,GBP,PLUS500,Financial,IL,STOXX 600 IL0011284465; cap unverified (index membership only); 2026-10-13
+PNN,LSE,GBP,PENNON GROUP PLC,Utilities,GB,STOXX 600 GB00BNNTLN49; cap unverified (index membership only); 2026-10-13
+PRU,LSE,GBP,PRUDENTIAL PLC,Financial,GB,STOXX 600 GB0007099541; cap unverified (index membership only); 2026-10-13
+PRX,AEB,EUR,PROSUS NV CLASS N,Communications,NL,STOXX 600 NL0013654783; cap unverified (index membership only); 2026-10-13
+PSN,LSE,GBP,PERSIMMON PLC,"Consumer, Cyclical",GB,STOXX 600 GB0006825383; cap unverified (index membership only); 2026-10-13
+PSON,LSE,GBP,PEARSON PLC,Communications,GB,STOXX 600 GB0006776081; cap unverified (index membership only); 2026-10-13
+PSPN,EBS,CHF,PSP SWISS PROPERTY AG,Financial,CH,STOXX 600 CH0018294154; cap unverified (index membership only); 2026-10-13
+PUB,SBF,EUR,PUBLICIS GROUPE,Communications,FR,STOXX 600 FR0000130577; cap unverified (index membership only); 2026-10-13
+PUM,IBIS,EUR,PUMA,"Consumer, Cyclical",DE,STOXX 600 DE0006969603; cap unverified (index membership only); 2026-10-13
+QLT,LSE,GBP,QUILTER PLC,Financial,GB,STOXX 600 GB00BNHSJN34; cap unverified (index membership only); 2026-10-13
+R3NK,IBIS,EUR,RENK GROUP AG,Industrial,DE,STOXX 600 DE000RENK730; cap unverified (index membership only); 2026-10-13
+RAA,IBIS,EUR,RATIONAL AG,"Consumer, Cyclical",DE,STOXX 600 DE0007010803; cap unverified (index membership only); 2026-10-13
+RAND,AEB,EUR,RANDSTAD,"Consumer, Non-cyclical",NL,STOXX 600 NL0000379121; cap unverified (index membership only); 2026-10-13
+REL,LSE,GBP,RELX PLC,"Consumer, Non-cyclical",GB,STOXX 600 GB00B2B0DG97; cap unverified (index membership only); 2026-10-13
+RHM,IBIS,EUR,RHEINMETALL AG,Industrial,DE,STOXX 600 DE0007030009; cap unverified (index membership only); 2026-10-13
+RI,SBF,EUR,PERNOD RICARD SA,"Consumer, Non-cyclical",FR,STOXX 600 FR0000120693; cap unverified (index membership only); 2026-10-13
+RIO,LSE,GBP,RIO TINTO,Basic Materials,GB,STOXX 600 GB0007188757; cap unverified (index membership only); 2026-10-13
+RKT,LSE,GBP,RECKITT BENCKISER GROUP PLC,"Consumer, Non-cyclical",GB,STOXX 600 GB00BSZBP530; cap unverified (index membership only); 2026-10-13
+RMS,SBF,EUR,HERMES INTERNATIONAL,"Consumer, Cyclical",FR,STOXX 600 FR0000052292; cap unverified (index membership only); 2026-10-13
+RMV,LSE,GBP,RIGHTMOVE PLC,Communications,GB,STOXX 600 GB00BGDT3G23; cap unverified (index membership only); 2026-10-13
+RNO,SBF,EUR,RENAULT SA,"Consumer, Cyclical",FR,STOXX 600 FR0000131906; cap unverified (index membership only); 2026-10-13
+ROP,EBS,CHF,ROCHE PS PAR AG,"Consumer, Non-cyclical",CH,STOXX 600 CH1499059983; cap unverified (index membership only); 2026-10-13
+ROR,LSE,GBP,ROTORK PLC,Industrial,GB,STOXX 600 GB00BVFNZH21; cap unverified (index membership only); 2026-10-13
+RR.,LSE,GBP,ROLLS-ROYCE HOLDINGS PLC,Industrial,GB,STOXX 600 GB00B63H8491; cap unverified (index membership only); 2026-10-13
+RS1,LSE,GBP,RS GROUP PLC,"Consumer, Cyclical",GB,STOXX 600 GB0003096442; cap unverified (index membership only); 2026-10-13
+RTO,LSE,GBP,RENTOKIL INITIAL PLC,"Consumer, Non-cyclical",GB,STOXX 600 GB00B082RF11; cap unverified (index membership only); 2026-10-13
+RWE,IBIS,EUR,RWE AG,Utilities,DE,STOXX 600 DE0007037129; cap unverified (index membership only); 2026-10-13
+RXL,SBF,EUR,REXEL SA,"Consumer, Cyclical",FR,STOXX 600 FR0010451203; cap unverified (index membership only); 2026-10-13
+SAF,SBF,EUR,SAFRAN SA,Industrial,FR,STOXX 600 FR0000073272; cap unverified (index membership only); 2026-10-13
+SAN1,SBF,EUR,SANOFI SA,"Consumer, Non-cyclical",FR,STOXX 600 FR0000120578; cap unverified (index membership only); 2026-10-13
+SAP,IBIS,EUR,SAP,Technology,DE,STOXX 600 DE0007164600; cap unverified (index membership only); 2026-10-13
+SBMO,AEB,EUR,SBM OFFSHORE,Energy,NL,STOXX 600 NL0000360618; cap unverified (index membership only); 2026-10-13
+SBRY,LSE,GBP,SAINSBURY(J) PLC,"Consumer, Non-cyclical",GB,STOXX 600 GB00B019KW72; cap unverified (index membership only); 2026-10-13
+SCHP,EBS,CHF,SCHINDLER HOLDING PAR AG,Industrial,CH,STOXX 600 CH0024638196; cap unverified (index membership only); 2026-10-13
+SCMN,EBS,CHF,SWISSCOM AG,Communications,CH,STOXX 600 CH0008742519; cap unverified (index membership only); 2026-10-13
+SCR,SBF,EUR,SCOR,Financial,FR,STOXX 600 FR0010411983; cap unverified (index membership only); 2026-10-13
+SCT,LSE,GBP,SOFTCAT PLC,Technology,GB,STOXX 600 GB00BYZDVK82; cap unverified (index membership only); 2026-10-13
+SDF,IBIS,EUR,K+S N AG,Basic Materials,DE,STOXX 600 DE000KSAG888; cap unverified (index membership only); 2026-10-13
+SDLF,LSE,GBP,STANDARD LIFE PLC,Financial,GB,STOXX 600 GB00BGXQNP29; cap unverified (index membership only); 2026-10-13
+SDZ,EBS,CHF,SANDOZ GROUP AG,"Consumer, Non-cyclical",CH,STOXX 600 CH1243598427; cap unverified (index membership only); 2026-10-13
+SFZN,EBS,CHF,SIEGFRIED HOLDING AG,"Consumer, Non-cyclical",CH,STOXX 600 CH1429326825; cap unverified (index membership only); 2026-10-13
+SGE,LSE,GBP,THE SAGE GROUP,Technology,GB,STOXX 600 GB00B8C3BL03; cap unverified (index membership only); 2026-10-13
+SGO,SBF,EUR,COMPAGNIE DE SAINT GOBAIN SA,Industrial,FR,STOXX 600 FR0000125007; cap unverified (index membership only); 2026-10-13
+SGRO,LSE,GBP,SEGRO REIT PLC,Financial,GB,STOXX 600 GB00B5ZN1N88; cap unverified (index membership only); 2026-10-13
+SGSN,EBS,CHF,SGS SA,"Consumer, Non-cyclical",CH,STOXX 600 CH1256740924; cap unverified (index membership only); 2026-10-13
+SHEL,LSE,GBP,SHELL,Energy,GB,STOXX 600 GB00BP6MXD84; cap unverified (index membership only); 2026-10-13
+SHL,IBIS,EUR,SIEMENS HEALTHINEERS AG,"Consumer, Non-cyclical",DE,STOXX 600 DE000SHL1006; cap unverified (index membership only); 2026-10-13
+SIE,IBIS,EUR,SIEMENS N AG,Industrial,DE,STOXX 600 DE0007236101; cap unverified (index membership only); 2026-10-13
+SIGN,EBS,CHF,SIG GROUP N AG,Industrial,CH,STOXX 600 CH0435377954; cap unverified (index membership only); 2026-10-13
+SIKA,EBS,CHF,SIKA AG,Industrial,CH,STOXX 600 CH0418792922; cap unverified (index membership only); 2026-10-13
+SLHN,EBS,CHF,SWISS LIFE HOLDING AG,Financial,CH,STOXX 600 CH0014852781; cap unverified (index membership only); 2026-10-13
+SMIN,LSE,GBP,SMITHS GROUP PLC,Industrial,GB,STOXX 600 GB00B1WY2338; cap unverified (index membership only); 2026-10-13
+SN.,LSE,GBP,SMITH AND NEPHEW PLC,"Consumer, Non-cyclical",GB,STOXX 600 GB0009223206; cap unverified (index membership only); 2026-10-13
+SOI,SBF,EUR,SOITEC SA,Technology,FR,STOXX 600 FR0013227113; cap unverified (index membership only); 2026-10-13
+SOON,EBS,CHF,SONOVA HOLDING AG,"Consumer, Non-cyclical",CH,STOXX 600 CH0012549785; cap unverified (index membership only); 2026-10-13
+SOP,SBF,EUR,SOPRA STERIA GROUP SA,Technology,FR,STOXX 600 FR0000050809; cap unverified (index membership only); 2026-10-13
+SPIE,SBF,EUR,SPIE SA,Industrial,FR,STOXX 600 FR0012757854; cap unverified (index membership only); 2026-10-13
+SPSN,EBS,CHF,SWISS PRIME SITE AG,Financial,CH,STOXX 600 CH0008038389; cap unverified (index membership only); 2026-10-13
+SPX,LSE,GBP,SPIRAX GROUP PLC,Industrial,GB,STOXX 600 GB00BWFGQN14; cap unverified (index membership only); 2026-10-13
+SQN,EBS,CHF,SWISSQUOTE GROUP HOLDING SA,Financial,CH,STOXX 600 CH1548235246; cap unverified (index membership only); 2026-10-13
+SREN,EBS,CHF,SWISS RE AG,Financial,CH,STOXX 600 CH0126881561; cap unverified (index membership only); 2026-10-13
+SRT3,IBIS,EUR,SARTORIUS PREF AG,Industrial,DE,STOXX 600 DE0007165631; cap unverified (index membership only); 2026-10-13
+SSE,LSE,GBP,SSE PLC,Utilities,GB,STOXX 600 GB0007908733; cap unverified (index membership only); 2026-10-13
+STAN,LSE,GBP,STANDARD CHARTERED PLC,Financial,GB,STOXX 600 GB0004082847; cap unverified (index membership only); 2026-10-13
+STJ,LSE,GBP,ST.JAMES PLACE PLC,Financial,GB,STOXX 600 GB0007669376; cap unverified (index membership only); 2026-10-13
+STMN,EBS,CHF,STRAUMANN HOLDING AG,"Consumer, Non-cyclical",CH,STOXX 600 CH1175448666; cap unverified (index membership only); 2026-10-13
+STMPA,SBF,EUR,STMICROELECTRONICS,Technology,NL,STOXX 600 NL0000226223; cap unverified (index membership only); 2026-10-13
+SU,SBF,EUR,SCHNEIDER ELECTRIC,Industrial,FR,STOXX 600 FR0000121972; cap unverified (index membership only); 2026-10-13
+SUN,EBS,CHF,SULZER AG,Industrial,CH,STOXX 600 CH0038388911; cap unverified (index membership only); 2026-10-13
+SUNN,EBS,CHF,SUNRISE N CLASS A LTD,Communications,CH,STOXX 600 CH1386220409; cap unverified (index membership only); 2026-10-13
+SVT,LSE,GBP,SEVERN TRENT PLC,Utilities,GB,STOXX 600 GB00B1FH8J72; cap unverified (index membership only); 2026-10-13
+SW,SBF,EUR,SODEXO SA,"Consumer, Cyclical",FR,STOXX 600 FR0000121220; cap unverified (index membership only); 2026-10-13
+SY1,IBIS,EUR,SYMRISE AG,Basic Materials,DE,STOXX 600 DE000SYM9999; cap unverified (index membership only); 2026-10-13
+TEG,IBIS,EUR,TAG IMMOBILIEN AG,Financial,DE,STOXX 600 DE0008303504; cap unverified (index membership only); 2026-10-13
+TEMN,EBS,CHF,TEMENOS AG,Technology,CH,STOXX 600 CH0012453913; cap unverified (index membership only); 2026-10-13
+TEP,SBF,EUR,TELEPERFORMANCE,Technology,FR,STOXX 600 FR0000051807; cap unverified (index membership only); 2026-10-13
+TKA,IBIS,EUR,THYSSENKRUPP AG,Basic Materials,DE,STOXX 600 DE0007500001; cap unverified (index membership only); 2026-10-13
+TLX,IBIS,EUR,TALANX AG,Financial,DE,STOXX 600 DE000TLX1005; cap unverified (index membership only); 2026-10-13
+TSCO,LSE,GBP,TESCO PLC,"Consumer, Non-cyclical",GB,STOXX 600 GB00BLGZ9862; cap unverified (index membership only); 2026-10-13
+TTE,SBF,EUR,TOTALENERGIES,Energy,FR,STOXX 600 FR0000120271; cap unverified (index membership only); 2026-10-13
+TUI1,IBIS,EUR,TUI N AG,"Consumer, Cyclical",DE,STOXX 600 DE000TUAG505; cap unverified (index membership only); 2026-10-13
+TW.,LSE,GBP,TAYLOR WIMPEY PLC,"Consumer, Cyclical",GB,STOXX 600 GB0008782301; cap unverified (index membership only); 2026-10-13
+UBSG,EBS,CHF,UBS GROUP AG,Financial,CH,STOXX 600 CH0244767585; cap unverified (index membership only); 2026-10-13
+UHR,EBS,CHF,THE SWATCH GROUP AG,"Consumer, Cyclical",CH,STOXX 600 CH0012255151; cap unverified (index membership only); 2026-10-13
+ULVR,LSE,GBP,UNILEVER PLC,"Consumer, Non-cyclical",GB,STOXX 600 GB00BVZK7T90; cap unverified (index membership only); 2026-10-13
+UMG,AEB,EUR,UNIVERSAL MUSIC GROUP,"Consumer, Cyclical",NL,STOXX 600 NL0015000IY2; cap unverified (index membership only); 2026-10-13
+URW,SBF,EUR,UNIBAIL-RODAMCO-WESTFIELD SE,Financial,FR,STOXX 600 FR0013326246; cap unverified (index membership only); 2026-10-13
+UTG,LSE,GBP,UNITE GROUP REIT PLC,Financial,GB,STOXX 600 GB0006928617; cap unverified (index membership only); 2026-10-13
+UU.,LSE,GBP,UNITED UTILITIES GROUP PLC,Utilities,GB,STOXX 600 GB00B39J2M42; cap unverified (index membership only); 2026-10-13
+VACN,EBS,CHF,VAT GROUP AG,Industrial,CH,STOXX 600 CH0311864901; cap unverified (index membership only); 2026-10-13
+VIE,SBF,EUR,VEOLIA ENVIRON. SA,Utilities,FR,STOXX 600 FR0000124141; cap unverified (index membership only); 2026-10-13
+VK,SBF,EUR,VALLOUREC SA,Industrial,FR,STOXX 600 FR0013506730; cap unverified (index membership only); 2026-10-13
+VNA,IBIS,EUR,VONOVIA,Financial,DE,STOXX 600 DE000A1ML7J1; cap unverified (index membership only); 2026-10-13
+VOD,LSE,GBP,VODAFONE GROUP PLC,Communications,GB,STOXX 600 GB00BH4HKS39; cap unverified (index membership only); 2026-10-13
+VOW3,IBIS,EUR,VOLKSWAGEN NON-VOTING PREF AG,"Consumer, Cyclical",DE,STOXX 600 DE0007664039; cap unverified (index membership only); 2026-10-13
+WEIR,LSE,GBP,WEIR PLC,Industrial,GB,STOXX 600 GB0009465807; cap unverified (index membership only); 2026-10-13
+WKL,AEB,EUR,WOLTERS KLUWER,"Consumer, Non-cyclical",NL,STOXX 600 NL0000395903; cap unverified (index membership only); 2026-10-13
+WPP,LSE,GBP,WPP PLC,Communications,JE,STOXX 600 JE00B8KF9B49; cap unverified (index membership only); 2026-10-13
+WTB,LSE,GBP,WHITBREAD PLC,"Consumer, Cyclical",GB,STOXX 600 GB00B1KJJ408; cap unverified (index membership only); 2026-10-13
+ZAL,IBIS,EUR,ZALANDO,"Consumer, Cyclical",DE,STOXX 600 DE000ZAL1111; cap unverified (index membership only); 2026-10-13
+ZEG,LSE,GBP,ZEGONA COMMUNICATIONS PLC,Communications,GB,STOXX 600 GB00BVGBY890; cap unverified (index membership only); 2026-10-13
+ZURN,EBS,CHF,ZURICH INSURANCE GROUP AG,Financial,CH,STOXX 600 CH0011075394; cap unverified (index membership only); 2026-10-13
