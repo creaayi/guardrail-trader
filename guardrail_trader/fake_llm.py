@@ -8,6 +8,8 @@ from __future__ import annotations
 import itertools
 from types import SimpleNamespace as NS
 
+from guardrail_trader.decision import example
+
 
 def _block_text(text):
     return NS(type="text", text=text)
@@ -34,7 +36,7 @@ class FakeClaude:
         usage = NS(input_tokens=0, output_tokens=0)
         order = {"symbol": self.symbol, "currency": "USD", "action": "BUY", "quantity": self.quantity,
                  "limit_price": round(self.price_fn(self.symbol), 2) if self.price_fn else 1.0,
-                 "reason": "fake-claude: harness test order"}
+                 "reason": "fake-claude: harness test order", **example("BUY")}
         script = [
             [_block_text("Checking the portfolio."), _block_tool("get_portfolio", {})],
             [_block_tool("list_universe", {"my_picks_only": True})],

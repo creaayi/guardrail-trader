@@ -7,7 +7,7 @@ broker's cash figure. Its cash and holdings come from this ledger:
 
 Tables
   runs       one row per bot run (value, drawdown, status)
-  proposals  every proposal Claude made + the gate's verdict and reasons
+  proposals  every proposal Claude made, its decision record (pocket, thesis, confidence...; T6) + the gate's verdict
   orders     every order sent to the broker and its outcome
   ledger     DEPOSIT / BUY / SELL cash movements in base currency (fills only)
   state      key/value: peak value, halted flag, drawdown tier (+ pause end, since)
@@ -15,7 +15,11 @@ Tables
   stops          protective STP orders at IBKR, one active per held line, identified by permId (T5)
   stop_history   every placement / raise / resize / cancel of a stop
   stop_fills     stop executions already booked (by IBKR execId, so a fill is never booked twice)
-  closed_trades  one row per exit (stop, kill, voluntary sale): entry, exit, P&L net, motif (T5; T6 enriches)
+  closed_trades  one row per exit (stop, kill, voluntary sale): entry, exit, P&L net, motif, pocket, confidence,
+                 duration, slippage allowance and success (T5, enriched by T6)
+
+Columns added after a table was first shipped live in MIGRATIONS and are added to an existing journal on open
+(idempotent ALTER TABLE ... ADD COLUMN); a fresh journal goes through the same path.
 """
 from __future__ import annotations
 
@@ -90,6 +94,28 @@ CREATE TABLE IF NOT EXISTS llm_usage (
 """
 
 
+# Columns added after the first schema (T6): (table, column, type). Applied on every open; existing ones skipped.
+MIGRATIONS = [
+    # proposals: Claude's decision record (CLAUDE.md §8.1, guardrail_trader/decision.py)
+    ("proposals", "poche", "TEXT"), ("proposals", "these", "TEXT"), ("proposals", "catalyseur", "TEXT"),
+    ("proposals", "fiabilite", "TEXT"), ("proposals", "horizon_jours", "INTEGER"), ("proposals", "stop_pct", "REAL"),
+    ("proposals", "objectif_pct", "REAL"), ("proposals", "invalidation", "TEXT"), ("proposals", "confiance", "REAL"),
+    ("proposals", "sources", "TEXT"), ("proposals", "motif_sortie", "TEXT"),
+    # ledger: which decision a fill belongs to, and its limit (slippage allowance)
+    ("ledger", "proposal_id", "INTEGER"), ("ledger", "limit_price", "REAL"),
+    # closed_trades: the decision it closes, and how it is scored
+    ("closed_trades", "poche", "TEXT"), ("closed_trades", "confiance", "REAL"), ("closed_trades", "duree_jours", "INTEGER"),
+    ("closed_trades", "entry_proposal_id", "INTEGER"), ("closed_trades", "exit_proposal_id", "INTEGER"),
+    ("closed_trades", "slippage_base", "REAL"), ("closed_trades", "reussite", "INTEGER"),
+    ("closed_trades", "pnl_vs_benchmark_pct", "REAL"),        # secondary, filled once T7 provides IWDA
+]
+DECISION_COLUMNS = ("these", "catalyseur", "fiabilite", "horizon_jours", "stop_pct", "objectif_pct", "invalidation",
+                    "confiance", "sources", "motif_sortie")
+
+# Flat slippage allowance on a leg filled exactly at its limit price (CLAUDE.md §8.3; CHANGELOG 12/10/2026 #6).
+# A decision succeeds when its P&L, net of commissions and of this allowance, is > 0.
+SLIPPAGE_PCT = 0.05
+
 STALE_RUN_MINUTES = 30  # well past AGENT_MAX_SECONDS + the fill wait
 
 
@@ -105,6 +131,13 @@ class Journal:
         self.db.row_factory = sqlite3.Row
         self.db.execute("PRAGMA foreign_keys = ON")
         self.db.executescript(SCHEMA)
+        self._migrate()
+
+    def _migrate(self) -> None:
+        with self.db:
+            for table, col, typ in MIGRATIONS:
+                if col not in {r[1] for r in self.db.execute(f"PRAGMA table_info({table})")}:
+                    self.db.execute(f"ALTER TABLE {table} ADD COLUMN {col} {typ}")
 
     def close(self) -> None:
         self.db.close()
@@ -251,50 +284,87 @@ class Journal:
         return {r["k"]: r["q"] for r in rows if r["q"] and abs(r["q"]) > 1e-9}
 
     def record_fill(self, symbol: str, currency: str, action: str, quantity: float, price: float,
-                    commission: float, fx_to_base: float, broker_order_id: int | None = None) -> None:
-        """Book a FILL (not an order). Price and commission in the instrument currency."""
+                    commission: float, fx_to_base: float, broker_order_id: int | None = None,
+                    proposal_id: int | None = None, limit_price: float | None = None) -> None:
+        """Book a FILL (not an order). Price, commission and limit in the instrument currency.
+        proposal_id: the decision the fill belongs to (None for stop fills and fills booked by hand)."""
         action = action.upper()
         gross = quantity * price
         amount = -(gross + commission) * fx_to_base if action == "BUY" else (gross - commission) * fx_to_base
         with self.db:
             self.db.execute(
-                "INSERT INTO ledger(ts,kind,symbol,currency,quantity,price,commission,fx_to_base,amount_base,broker_order_id) "
-                "VALUES(?,?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO ledger(ts,kind,symbol,currency,quantity,price,commission,fx_to_base,amount_base,"
+                "broker_order_id,proposal_id,limit_price) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
                 (_now(), action, symbol.upper(), currency.upper(), quantity, price, commission,
-                 fx_to_base, amount, broker_order_id))
+                 fx_to_base, amount, broker_order_id, proposal_id, limit_price))
 
     def position_entry(self, key: str) -> tuple[str | None, float | None]:
         """(timestamp the current position was opened, average BUY price in the instrument currency,
         commission excluded) - the entry the stop rules refer to. (None, None) when flat."""
+        pos = self._open_position(key)
+        return (pos["opened"], pos["cost"] / pos["qty"]) if pos else (None, None)
+
+    def _open_position(self, key: str) -> dict | None:
+        """The current position of `key`, None when flat: opened (ts), qty, cost (instrument currency,
+        commission excluded), slip (slippage allowance of its BUY legs, base currency) and proposal_id (the BUY
+        decision that opened it). Partial sells scale cost and slip down pro rata."""
         sym, ccy = key.split(":")
-        qty, cost, opened = 0.0, 0.0, None
-        for kind, q, px, ts in self.db.execute(
-                "SELECT kind, quantity, price, ts FROM ledger WHERE symbol=? AND currency=? AND kind IN ('BUY','SELL') "
-                "ORDER BY id", (sym, ccy)).fetchall():
+        pos = None
+        for kind, q, px, ts, fx, lmt, pid in self.db.execute(
+                "SELECT kind, quantity, price, ts, fx_to_base, limit_price, proposal_id FROM ledger "
+                "WHERE symbol=? AND currency=? AND kind IN ('BUY','SELL') ORDER BY id", (sym, ccy)).fetchall():
             if kind == "BUY":
-                if qty <= 1e-9:
-                    qty, cost, opened = 0.0, 0.0, ts
-                qty, cost = qty + q, cost + q * px
-            else:
-                cost = cost * max(qty - q, 0.0) / qty if qty > 1e-9 else 0.0
-                qty = max(qty - q, 0.0)
-        return (opened, cost / qty) if qty > 1e-9 else (None, None)
+                if pos is None:
+                    pos = dict(opened=ts, qty=0.0, cost=0.0, slip=0.0, proposal_id=pid)
+                pos["qty"] += q
+                pos["cost"] += q * px
+                pos["slip"] += _slippage(q, px, lmt, fx)
+            elif pos is not None:
+                left = max(pos["qty"] - q, 0.0)
+                if left <= 1e-9:
+                    pos = None
+                    continue
+                for k in ("cost", "slip"):
+                    pos[k] *= left / pos["qty"]
+                pos["qty"] = left
+        return pos
 
     def book_sell(self, symbol: str, currency: str, quantity: float, price: float, commission: float,
                   fx_to_base: float, motif: str, broker_order_id: int | None = None,
-                  perm_id: int | None = None) -> int:
-        """Book a SELL fill AND its closed-trade row (P&L net of both commissions, in base currency)."""
+                  perm_id: int | None = None, proposal_id: int | None = None,
+                  limit_price: float | None = None) -> int:
+        """Book a SELL fill AND its closed-trade row, linked to the BUY decision that opened the position.
+
+        pnl_net_base: net of both commissions (base currency). slippage_base: the flat SLIPPAGE_PCT allowance
+        on each leg filled exactly at its limit (stop fills have no limit: their real slippage is in the price).
+        reussite = pnl_net_base - slippage_base > 0, the single success definition (rate and calibration).
+        """
         key = f"{symbol.upper()}:{currency.upper()}"
-        entry_ts, entry_px = self.position_entry(key)
+        pos = self._open_position(key)
         cost_per_share = self.avg_costs().get(key, 0.0)          # base, BUY commission included
-        self.record_fill(symbol, currency, "SELL", quantity, price, commission, fx_to_base, broker_order_id)
-        proceeds = (quantity * price - commission) * fx_to_base
+        self.record_fill(symbol, currency, "SELL", quantity, price, commission, fx_to_base, broker_order_id,
+                         proposal_id, limit_price)
+        exit_ts = _now()
+        pnl = (quantity * price - commission) * fx_to_base - cost_per_share * quantity
+        share = min(quantity / pos["qty"], 1.0) if pos else 0.0
+        slip = (pos["slip"] * share if pos else 0.0) + _slippage(quantity, price, limit_price, fx_to_base)
+        entry = self._proposal(pos["proposal_id"]) if pos else None
+        days = ((datetime.fromisoformat(exit_ts).date() - datetime.fromisoformat(pos["opened"]).date()).days
+                if pos else None)
         with self.db:
             return self.db.execute(
                 "INSERT INTO closed_trades(symbol,currency,entry_ts,exit_ts,quantity,entry_price,exit_price,"
-                "pnl_net_base,motif,perm_id,broker_order_id) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
-                (symbol.upper(), currency.upper(), entry_ts, _now(), quantity, entry_px, price,
-                 proceeds - cost_per_share * quantity, motif, perm_id, broker_order_id)).lastrowid
+                "pnl_net_base,motif,perm_id,broker_order_id,poche,confiance,duree_jours,entry_proposal_id,"
+                "exit_proposal_id,slippage_base,reussite) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (symbol.upper(), currency.upper(), pos["opened"] if pos else None, exit_ts, quantity,
+                 pos["cost"] / pos["qty"] if pos else None, price, pnl, motif, perm_id, broker_order_id,
+                 entry["poche"] if entry else None, entry["confiance"] if entry else None, days,
+                 pos["proposal_id"] if pos else None, proposal_id, slip, int(pnl - slip > 0))).lastrowid
+
+    def _proposal(self, proposal_id: int | None) -> sqlite3.Row | None:
+        if proposal_id is None:
+            return None
+        return self.db.execute("SELECT * FROM proposals WHERE id=?", (proposal_id,)).fetchone()
 
     # -- protective stops (T5) ----------------------------------------------------
     def add_stop(self, symbol: str, currency: str, perm_id: int, order_id: int, quantity: float, stop_price: float,
@@ -383,13 +453,20 @@ class Journal:
                     [(run_id, k, h.quantity, h.price_base) for k, h in state.holdings.items()])
 
     def record_decision(self, run_id: int, d: Decision) -> int:
+        """One proposal, the gate's verdict, and Claude's decision record (poche + proposal.details)."""
         p = d.proposal
+        rec = [p.details.get(c) for c in DECISION_COLUMNS]
+        i = DECISION_COLUMNS.index("sources")
+        rec[i] = json.dumps(rec[i]) if rec[i] is not None else None
+        cols = ",".join(DECISION_COLUMNS)
         with self.db:
             return self.db.execute(
                 "INSERT INTO proposals(run_id,ts,symbol,exchange,currency,action,quantity,limit_price,reason,"
-                "approved,block_reasons,notional_base,est_commission_base) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                f"approved,block_reasons,notional_base,est_commission_base,poche,{cols}) "
+                f"VALUES({','.join('?' * (14 + len(DECISION_COLUMNS)))})",
                 (run_id, _now(), p.symbol, p.exchange, p.currency, p.action.upper(), p.quantity, p.limit_price,
-                 p.reason, int(d.approved), json.dumps(d.reasons), d.notional_base, d.commission_base)).lastrowid
+                 p.reason, int(d.approved), json.dumps(d.reasons), d.notional_base, d.commission_base,
+                 p.poche or None, *rec)).lastrowid
 
     def record_order(self, proposal_id: int | None, r) -> int:
         """r: broker OrderResult."""
@@ -503,3 +580,10 @@ class Journal:
         if observe:
             state.peak_value_base = self.observe_value(state.value_base)
         return state
+
+
+def _slippage(quantity: float, price: float, limit_price: float | None, fx_to_base: float) -> float:
+    """SLIPPAGE_PCT of the leg's value (base currency) when it filled exactly at its limit, else 0."""
+    if limit_price is None or abs(price - limit_price) > 1e-9 * max(abs(limit_price), 1.0):
+        return 0.0
+    return quantity * price * fx_to_base * SLIPPAGE_PCT / 100

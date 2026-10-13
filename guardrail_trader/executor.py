@@ -6,6 +6,7 @@ from dataclasses import dataclass, replace
 from typing import Callable
 
 from guardrail_trader.broker import IBKRBroker
+from guardrail_trader.decision import CODE_MOTIFS, EXIT_MOTIFS
 from guardrail_trader.journal import Journal
 from guardrail_trader.risk import Decision
 
@@ -24,9 +25,14 @@ class ExecutionReport:
     status: str
 
 
-def _motif(reason: str) -> str:
-    """Exit motif for closed_trades. T6 makes Claude state it; until then only the kill switch is known."""
-    return "kill" if reason.startswith("kill switch") else "non_precise"
+def _motif(p, log: Callable[[str], None]) -> str:
+    """Exit motif for closed_trades: Claude's validated motif_sortie, or 'kill' set by the kill switch.
+    A fill is booked whatever happens (the money moved): an unexpected missing motif is flagged, not fatal."""
+    motif = p.details.get("motif_sortie")
+    if motif in EXIT_MOTIFS + CODE_MOTIFS:
+        return motif
+    log(f"[exec] WARNING SELL {p.symbol} has no valid exit motif ({motif!r}); booked as 'inconnu'")
+    return "inconnu"
 
 
 def execute(decisions: list[tuple[int, Decision]], broker: IBKRBroker, journal: Journal,
@@ -73,9 +79,11 @@ def execute(decisions: list[tuple[int, Decision]], broker: IBKRBroker, journal: 
             # commission is booked in the instrument currency; convert if IBKR reported another one
             comm_in_instr = comm * (fx.get(comm_ccy, 1.0) / fx[p.currency]) if comm_ccy and comm_ccy != p.currency else comm
             if p.action.upper() == "SELL":
-                journal.book_sell(p.symbol, p.currency, qty, avg, comm_in_instr, fx[p.currency], _motif(p.reason), oid)
+                journal.book_sell(p.symbol, p.currency, qty, avg, comm_in_instr, fx[p.currency], _motif(p, log), oid,
+                                  proposal_id=pid, limit_price=p.limit_price)
             else:
-                journal.record_fill(p.symbol, p.currency, p.action, qty, avg, comm_in_instr, fx[p.currency], oid)
+                journal.record_fill(p.symbol, p.currency, p.action, qty, avg, comm_in_instr, fx[p.currency], oid,
+                                    proposal_id=pid, limit_price=p.limit_price)
                 buy_prices[p.key] = avg
         journal.record_order(pid, broker.order_result(oid))
         log(f"[exec] {p.action} {p.symbol}: filled {qty:g}/{p.quantity:g} @ {avg if not math.isnan(avg) else '-'}"

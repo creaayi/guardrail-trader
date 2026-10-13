@@ -71,6 +71,8 @@ class RiskConfig:
     stop_max_pct: float = 12.0          # ... and at most this far
     breakeven_atr_mult: float = 1.0     # highest close >= entry + this x ATR14 -> stop raised to entry
     trail_atr_mult: float = 2.0         # then trails this x ATR14 below the highest close; never lowered
+    # Pockets Claude may propose for (T6, CLAUDE.md §2). Required in risk.toml; this default = rule off.
+    pockets: tuple[str, ...] = ("A", "B", "C")
 
 
 @dataclass(frozen=True)
@@ -204,6 +206,10 @@ def load_risk_config(path: Path | str = DEFAULT_RISK_PATH) -> RiskConfig:
         raise ValueError(f"{both} listed both in the universe and in the hedge files")
     if enable_hedge:
         universe = {**universe, **hedge}
+    pockets = u["pockets"]
+    if not (isinstance(pockets, list) and pockets and len(set(pockets)) == len(pockets)
+            and set(pockets) <= {"A", "B", "C"}):
+        raise ValueError(f"universe.pockets must be a non-empty list of distinct A, B, C, got {pockets!r}")
 
     return RiskConfig(
         capital=capital,
@@ -233,4 +239,5 @@ def load_risk_config(path: Path | str = DEFAULT_RISK_PATH) -> RiskConfig:
         stop_max_pct=stop_max,
         breakeven_atr_mult=_mult("breakeven_atr_mult", lim["breakeven_atr_mult"]),
         trail_atr_mult=_mult("trail_atr_mult", lim["trail_atr_mult"]),
+        pockets=tuple(pockets),
     )

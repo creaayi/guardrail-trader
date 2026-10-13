@@ -331,6 +331,14 @@ function orderCell(r) {
   return status("warn", `Not filled · ${r.order_status}`);
 }
 
+function decisionTags(r) {
+  // T6 decision record; rows journaled before T6 (or kill-switch sells) have none
+  if (!r.poche && r.confiance == null) return r.reason && r.reason.startsWith("kill switch") ? status("bad", "kill switch") : "–";
+  const conf = r.confiance == null ? "" : ` · ${Math.round(r.confiance * 100)}%`;
+  const sub = [r.fiabilite, r.motif_sortie && `exit: ${r.motif_sortie}`].filter(Boolean).map(esc).join(" · ");
+  return `<b>${esc(r.poche || "–")}${conf}</b>` + (sub ? `<div class="muted" style="font-size:12px">${sub}</div>` : "");
+}
+
 function renderDecisions(d) {
   let rows = d.decisions;
   if (decFilter === "approved") rows = rows.filter(r => r.approved);
@@ -341,7 +349,8 @@ function renderDecisions(d) {
     {h: "Order", f: r => `<b>${esc(r.action)} ${r.quantity} ${esc(r.symbol)}</b><div class="muted" style="font-size:12px">limit ${esc(r.currency)} ${Number(r.limit_price).toFixed(2)}</div>`},
     {h: `Value (${d.base_currency})`, num: 1, f: r => r.approved ? money(r.notional_base) : "–"},
     {h: "Outcome", f: orderCell},
-    {h: "Claude's reason", f: r => `<div class="reason">${esc(r.reason)}</div>`},
+    {h: "Pocket · confidence", f: decisionTags},
+    {h: "Claude's thesis", f: r => `<div class="reason">${esc(r.these || r.reason)}</div>`},
   ], rows, "No decisions yet.");
 }
 

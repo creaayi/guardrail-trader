@@ -114,6 +114,7 @@ def build(j: Journal, cfg: RiskConfig, days: int | None = DEFAULT_DAYS) -> dict:
     decisions = _rows(j, """
         SELECT p.id, p.run_id, p.ts, p.action, p.quantity, p.symbol, p.currency, p.limit_price, p.reason,
                p.approved, p.block_reasons, p.notional_base, p.est_commission_base, r.mode,
+               p.poche, p.confiance, p.these, p.fiabilite, p.motif_sortie,
                o.status AS order_status, o.filled, o.avg_fill_price
         FROM proposals p JOIN runs r ON r.id = p.run_id LEFT JOIN orders o ON o.proposal_id = p.id
         ORDER BY p.id DESC LIMIT ?""", (ROW_CAP,))

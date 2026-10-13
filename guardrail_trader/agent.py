@@ -14,6 +14,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Callable, Protocol
 
+from guardrail_trader import decision
 from guardrail_trader.risk import (
     Decision, MarketInfo, PortfolioState, Proposal, RiskConfig, evaluate,
 )
@@ -65,14 +66,32 @@ Things to weigh:
 - get_portfolio includes recent_activity: your last orders and what happened (blocked, filled, not filled).
   Don't repeat an order that was just blocked or didn't fill without a reason; unfilled orders still used up the monthly limit.
 
+Decision record (required on EVERY order, checked by code; an incomplete order is rejected):
+- poche: the pocket. Enabled now: {pockets}. Pocket A = systematic momentum: entries come from the ranking.
+- these: 2-4 sentences, specific to this instrument and today. sources: what you relied on (tool names such as
+  momentum_ranking or get_price_history, or the URLs of web results). fiabilite: mecanique (a rule: ranking,
+  rebalancing), signal (evidence about this instrument), signal_sectoriel (evidence about its sector),
+  a_confirmer (not verified).
+- BUY also: catalyseur, horizon_jours (expected holding period, calendar days), stop_pct (loss below entry, in %,
+  at which the thesis is wrong; code places its own stop at {stop_mult} x ATR14, between {stop_min}% and
+  {stop_max}% below entry), objectif_pct (expected gain in %), invalidation (the observable fact that would
+  prove the thesis wrong).
+- SELL also: motif_sortie, why the decision closes: objectif (target reached), horizon (holding period over),
+  rebalancement (the pocket A rebalance dropped it), these_invalidee (the invalidation happened). Stop and
+  kill-switch exits are recorded by code, never by you.
+- confiance: the probability, from 0 to 1, that the decision ends with a NET profit (after commissions and a
+  0.05% slippage allowance). It is scored: over many decisions, those you rate 0.6 must succeed about 60% of
+  the time, those you rate 0.8 about 80%. Use the whole range honestly; momentum entries rarely deserve more
+  than 0.6, and a confidence below 0.5 on a BUY means you should probably not place it.
+
 Process:
 1. Call get_portfolio.
 2. Explore candidates with list_universe and get_price_history (max {hist} history calls per run).
 3. Optionally call check_orders to dry-run proposals through the risk gate (max {checks} calls).
 4. Finish by calling submit_orders, with an empty list if you decide to hold. If any order breaks a
-   limit, submit_orders returns the gate's reasons once so you can fix or drop it; after that,
-   blocked orders are simply dropped.
-Every order needs a concise, specific reason; it is logged for the owner to audit."""
+   limit or its decision record is incomplete, submit_orders returns the reasons once so you can fix or
+   drop it; after that, blocked or incomplete orders are simply dropped.
+Every decision record is logged for the owner to audit, and closed decisions are scored against it."""
 
 TOOLS = [
     {"name": "get_portfolio",
@@ -101,8 +120,10 @@ _ORDER = {"type": "object", "properties": {
     "action": {"type": "string", "enum": ["BUY", "SELL"]},
     "quantity": {"type": "integer", "minimum": 1},
     "limit_price": {"type": "number", "description": "In the instrument currency."},
-    "reason": {"type": "string"}},
-    "required": ["symbol", "currency", "action", "quantity", "limit_price", "reason"]}
+    "reason": {"type": "string", "description": "Optional one-line summary; defaults to the thesis."},
+    **decision.PROPERTIES},
+    # BUY additionally requires decision.BUY_ONLY, SELL decision.SELL_ONLY: checked in code (decision.field_errors)
+    "required": ["symbol", "currency", "action", "quantity", "limit_price", *decision.COMMON]}
 TOOLS[3]["input_schema"] = {"type": "object", "properties": {"orders": {"type": "array", "items": _ORDER}},
                             "required": ["orders"]}
 TOOLS[4]["input_schema"] = {"type": "object", "properties": {
@@ -132,6 +153,7 @@ class AgentResult:
     cost_usd: float = 0.0
     stop_reason: str = ""
     transcript: list = field(default_factory=list)
+    incomplete: list = field(default_factory=list)   # [(Proposal, [field errors])] dropped after the revision
 
 
 def _free(_model, _usage) -> float:
@@ -156,6 +178,7 @@ class TradingAgent:
         self.history_calls = 0
         self.check_calls = 0
         self.submit_revisions = 0
+        self._final: tuple[list[Proposal], list] = ([], [])
         self.recent = recent_activity or []
         self.avg_costs = avg_costs or {}
         self.momentum = momentum
@@ -175,7 +198,9 @@ class TradingAgent:
                                       pause=c.drawdown_pause_pct, pause_days=c.drawdown_pause_days,
                                       resume=c.drawdown_resume_pct, reduce=c.drawdown_reduce_pct,
                                       reduce_eq=c.reduce_max_equity_pct, daily=c.daily_loss_halt_pct,
-                                      hist=MAX_HISTORY_CALLS, checks=MAX_CHECK_CALLS)
+                                      hist=MAX_HISTORY_CALLS, checks=MAX_CHECK_CALLS,
+                                      pockets=", ".join(c.pockets), stop_mult=c.stop_atr_mult,
+                                      stop_min=c.stop_min_pct, stop_max=c.stop_max_pct)
         # Prompt caching: system + tools are identical every turn; the conversation prefix grows.
         # Cached input is billed at 10% of the normal price.
         tools = [dict(t) for t in TOOLS]
@@ -229,7 +254,8 @@ class TradingAgent:
                 self.log(f"[tool] {b.name}({json.dumps(b.input)[:200]}) -> {'ERROR ' if is_err else ''}{out[:200]}")
                 results.append({"type": "tool_result", "tool_use_id": b.id, "content": out, "is_error": is_err})
                 if b.name == "submit_orders" and not is_err:
-                    res.proposals, res.summary, res.submitted = self._to_proposals(b.input["orders"]), b.input.get("summary", ""), True
+                    res.proposals, res.incomplete = self._final
+                    res.summary, res.submitted = b.input.get("summary", ""), True
             messages.append({"role": "user", "content": results})
             if res.submitted:
                 return res
@@ -326,20 +352,36 @@ class TradingAgent:
         if self.check_calls >= MAX_CHECK_CALLS:
             raise _ToolError(f"check_orders limit ({MAX_CHECK_CALLS}) reached; call submit_orders")
         self.check_calls += 1
-        return json.dumps([_verdict(d) for d in self.evaluate(self._to_proposals(a["orders"]))])
+        complete, incomplete = self._split(a["orders"])
+        return json.dumps([_incomplete(p, e) for p, e in incomplete]
+                          + [_verdict(d) for d in self.evaluate(complete)])
 
     def _submit(self, a) -> str:
-        proposals = self._to_proposals(a["orders"])
-        decisions = self.evaluate(proposals)
-        if any(not d.approved for d in decisions) and self.submit_revisions < MAX_SUBMIT_REVISIONS:
+        complete, incomplete = self._split(a["orders"])
+        decisions = self.evaluate(complete)
+        if (incomplete or any(not d.approved for d in decisions)) and self.submit_revisions < MAX_SUBMIT_REVISIONS:
             self.submit_revisions += 1
             raise _ToolError(json.dumps({
-                "rejected": "Some orders break a limit. Nothing was submitted. Fix or drop the blocked "
-                            "orders and call submit_orders again. This is your only revision: next time, "
-                            "blocked orders are dropped and the rest go ahead.",
+                "rejected": "Some orders break a limit or have an incomplete decision record. Nothing was "
+                            "submitted. Fix or drop them and call submit_orders again. This is your only "
+                            "revision: next time, blocked or incomplete orders are dropped and the rest go ahead.",
+                "incomplete": [_incomplete(p, e) for p, e in incomplete],
                 "gate": [_verdict(d) for d in decisions]}))
-        return json.dumps({"received": len(proposals), "gate_preview": [_verdict(d) for d in decisions],
+        self._final = (complete, incomplete)
+        return json.dumps({"received": len(complete), "dropped_incomplete": [_incomplete(p, e) for p, e in incomplete],
+                           "gate_preview": [_verdict(d) for d in decisions],
                            "note": "Final gate check and execution happen in code after this."})
+
+    def _split(self, orders: list[dict]) -> tuple[list[Proposal], list[tuple[Proposal, list[str]]]]:
+        """(complete proposals, [(incomplete proposal, field errors)]) - decision.field_errors, fail-closed."""
+        complete, incomplete = [], []
+        for o, p in zip(orders, self._to_proposals(orders)):
+            errs = decision.field_errors(o, self.cfg.pockets)
+            if errs:
+                incomplete.append((p, errs))
+            else:
+                complete.append(p)
+        return complete, incomplete
 
     # ---------------------------------------------------------------- helpers
     def evaluate(self, proposals: list[Proposal]) -> list[Decision]:
@@ -363,8 +405,10 @@ class TradingAgent:
         for o in orders:
             sym, ccy = o["symbol"].upper().replace(".", " "), o["currency"].upper()
             inst = self.cfg.universe.get(f"{sym}:{ccy}")
+            reason = o.get("reason") or (o.get("these") if isinstance(o.get("these"), str) else "") or ""
             out.append(Proposal(sym, inst.exchange if inst else "?", ccy, o["action"].upper(),
-                                float(o["quantity"]), float(o["limit_price"]), o.get("reason", "")))
+                                float(o["quantity"]), float(o["limit_price"]), reason,
+                                poche=str(o.get("poche") or ""), details=decision.details(o)))
         return out
 
 
@@ -382,6 +426,11 @@ def _move_cache_breakpoint(messages: list) -> None:
     last = messages[-1]
     if last["role"] == "user" and isinstance(last["content"], list) and last["content"]:
         last["content"][-1]["cache_control"] = {"type": "ephemeral"}
+
+
+def _incomplete(p: Proposal, errors: list[str]) -> dict:
+    return {"order": f"{p.action} {p.quantity:g} {p.symbol}:{p.currency} @ {p.limit_price}",
+            "approved": False, "incomplete_record": errors}
 
 
 def _verdict(d: Decision) -> dict:

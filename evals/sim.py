@@ -12,6 +12,7 @@ from pathlib import Path
 from types import SimpleNamespace as NS
 from typing import Callable
 
+from guardrail_trader.decision import example
 from guardrail_trader.broker import BrokerNotReadyError
 from guardrail_trader.broker.ibkr import ExecFill, OpenOrder, OrderResult
 from guardrail_trader.journal import Journal
@@ -222,9 +223,11 @@ class SimMarket:
 
 
 # ------------------------------------------------------------------------------ Claude
-def order(sym, qty, action="BUY", px=None, reason="eval"):
+def order(sym, qty, action="BUY", px=None, reason="eval", **record):
+    """An order with a complete decision record (decision.example), overridable field by field."""
     return {"symbol": sym, "currency": "USD", "action": action, "quantity": qty,
-            "limit_price": PRICES.get(f"{sym}:USD", 1.0) if px is None else px, "reason": reason}
+            "limit_price": PRICES.get(f"{sym}:USD", 1.0) if px is None else px, "reason": reason,
+            **example(action), **record}
 
 
 class ScriptedClaude:

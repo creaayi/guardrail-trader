@@ -3,6 +3,7 @@ import json
 from types import SimpleNamespace as NS
 
 from guardrail_trader.agent import MAX_HISTORY_CALLS, TradingAgent
+from guardrail_trader.decision import example
 from guardrail_trader.fake_llm import FakeClaude
 from guardrail_trader.risk import Holding, Instrument, PortfolioState, RiskConfig
 
@@ -60,7 +61,8 @@ def test_non_allowlisted_symbol_is_a_tool_error_not_a_crash():
 
 def test_check_orders_reports_gate_blocks():
     out, err = agent(FakeClaude())._dispatch("check_orders", {"orders": [
-        {"symbol": "META", "currency": "USD", "action": "BUY", "quantity": 3, "limit_price": 680.0, "reason": "x"}]})
+        {"symbol": "META", "currency": "USD", "action": "BUY", "quantity": 3, "limit_price": 680.0, "reason": "x",
+         **example("BUY")}]})
     v = json.loads(out)[0]
     assert not err and not v["approved"] and any("position would be" in r for r in v["block_reasons"])
 
