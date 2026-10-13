@@ -219,7 +219,7 @@ function renderKpis(d) {
   const schedOk = tickAgeMin !== null && tickAgeMin < 20;
   tiles.push(["Scheduler",
     schedOk ? status("ok", "running") : status("bad", tickAgeMin === null ? "never ran" : `silent ${Math.round(tickAgeMin)} min`),
-    sc.next_slot_sydney ? `next: ${when(sc.next_slot_sydney)} (${sc.next_slot_name})` : ""]);
+    sc.next_slot_paris ? `next: ${when(sc.next_slot_paris)} (${sc.next_slot_name})` : ""]);
   $("#kpis").innerHTML = tiles.map(([l, v, s, m]) => `
     <div class="kpi"><div class="label">${l}</div><div class="value">${v}</div><div class="sub">${s}</div>
     ${m !== undefined ? `<div class="meter" role="img" aria-label="${m.toFixed(0)}% used"><i style="width:${m.toFixed(1)}%;${m >= 80 ? "background:var(--critical)" : ""}"></i></div>` : ""}</div>`).join("");

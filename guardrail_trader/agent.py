@@ -325,9 +325,12 @@ class TradingAgent:
         out.writerow(["symbol", "currency", "name", "sector", "country", "price", "price_base", "my_pick"])
         n = 0
         # cfg.universe never holds hedge instruments unless enable_hedge (see risk/config.py)
+        tradable = self.state.tradable_exchanges
         for key, inst in sorted(self.cfg.universe.items()):
             px = self.market.prices.get(key)
             if px is None or (syms and inst.symbol not in syms):
+                continue
+            if tradable is not None and inst.exchange not in tradable:    # another slot's market (T8)
                 continue
             if a.get("my_picks_only") and inst.symbol not in self.picks:
                 continue

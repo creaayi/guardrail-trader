@@ -32,8 +32,8 @@ services:
       READ_ONLY_API: "no"                  # our code has its own read-only mode
       TWS_ACCEPT_INCOMING: accept
       BYPASS_WARNING: "yes"
-      TIME_ZONE: Australia/Sydney
-      AUTO_RESTART_TIME: "11:59 AM"        # daily restart, Sydney midday = outside US market hours
+      TIME_ZONE: Europe/Paris
+      AUTO_RESTART_TIME: "04:00 AM"        # daily restart, 04:00 Paris = outside EU and US sessions (CLAUDE.md §10)
       TWOFA_TIMEOUT_ACTION: restart
       RELOGIN_AFTER_TWOFA_TIMEOUT: "yes"
       # Never kick an existing session (e.g. a native IB Gateway still logged in).

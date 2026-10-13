@@ -106,6 +106,8 @@ class PortfolioState:
     tier: str = NORMAL                 # drawdown tier for this run (see next_tier)
     pause_until: str | None = None     # PAUSED: last day without BUYs
     daily_halt: str = ""               # non-empty = yesterday's loss blocks every order today (the reason)
+    # exchanges this run may trade (its slot's markets that are open now, T8); None = no restriction
+    tradable_exchanges: frozenset[str] | None = None
 
     @property
     def value_base(self) -> float:
@@ -202,6 +204,9 @@ def _check(p: Proposal, sim: PortfolioState, market: dict[str, MarketInfo], cfg:
         r.append(f"{p.key} is not on the allowlist")
     elif cfg.universe[p.key].exchange != p.exchange.upper():
         r.append(f"{p.key} must trade on {cfg.universe[p.key].exchange}, not {p.exchange}")
+    elif sim.tradable_exchanges is not None and cfg.universe[p.key].exchange not in sim.tradable_exchanges:
+        return [f"{cfg.universe[p.key].exchange} is not tradable in this slot (closed, or another slot's market; "
+                f"tradable now: {', '.join(sorted(sim.tradable_exchanges)) or 'none'})"]
     if not (math.isfinite(p.quantity) and math.isfinite(p.limit_price)):
         return [f"quantity and limit price must be finite numbers, got {p.quantity} @ {p.limit_price}"]
     if not p.quantity > 0:
