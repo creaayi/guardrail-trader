@@ -1,5 +1,5 @@
 symbol,exchange,currency,name,sector,country,source
 IWDA,AEB,EUR,iShares Core MSCI World UCITS ETF (Acc),Funds,IE,CLAUDE.md §3 (benchmark); contract to verify at IBKR
-CSPX,LSE,USD,iShares Core S&P 500 UCITS ETF (Acc),Funds,IE,CLAUDE.md §3; contract to verify at IBKR
+CSPX,LSEETF,USD,iShares Core S&P 500 UCITS ETF (Acc),Funds,IE,CLAUDE.md §3; IBKR primary exchange LSEETF (checked 13/10/2026)
 EXSA,IBIS,EUR,iShares STOXX Europe 600 UCITS ETF (DE),Funds,DE,CLAUDE.md §3; contract to verify at IBKR
 IBGS,AEB,EUR,iShares EUR Govt Bond 1-3yr UCITS ETF,Funds,IE,CLAUDE.md §3 (short-term EUR bonds); contract to verify at IBKR

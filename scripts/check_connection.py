@@ -87,7 +87,7 @@ def main() -> int:
 # One well-known stock per primary exchange of CLAUDE.md §3, plus the hedge ETFs (hedge.csv).
 SAMPLE = [("MC", "SBF", "EUR"), ("ASML", "AEB", "EUR"), ("SAP", "IBIS", "EUR"), ("VOD", "LSE", "GBP"),
           ("NESN", "EBS", "CHF"), ("AAPL", "SMART", "USD"),
-          ("IWDA", "AEB", "EUR"), ("CSPX", "LSE", "USD"), ("EXSA", "IBIS", "EUR"), ("IBGS", "AEB", "EUR")]
+          ("IWDA", "AEB", "EUR"), ("CSPX", "LSEETF", "USD"), ("EXSA", "IBIS", "EUR"), ("IBGS", "AEB", "EUR")]
 
 
 def sample_exchanges(broker) -> list[str]:
