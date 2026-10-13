@@ -62,8 +62,9 @@ Mise à jour du 12/10/2026 : décisions de validation de T0 intégrées (voir `C
 - Table `closed_trades` créée ici en version minimale (entrée, sortie, motif, quantité, P&L net) ; enrichie en T6.
 - `run_bot.py` nouveau step « stops » **avant la réconciliation des positions** : détecter et booker les stops exécutés depuis le dernier run (exécutions IBKR, commission comprise) → ledger + `closed_trades` + cooldown ; puis réconcilier ; puis relever les stops suiveurs (jamais abaisser) avant l'appel LLM.
 - Réconciliation (step 1) : les ordres ouverts connus dans `stops` sont tolérés ; tout autre ordre ouvert = arrêt.
+- Note du 13/10/2026 : limites documentées dans `docs/stops.md` (heures normales seulement, gaps sous le stop).
 - Tests : calcul de stop borné [−12 %, −6 %], relèvement monotone, réconciliation avec stops, stop exécuté entre deux runs, aucune vente sans annulation/réduction préalable du stop (pas de position courte), stops hors quota mensuel.
-- État au 12/10/2026 : PR ouverte, en attente de validation humaine. `guardrail_trader/stops.py`, créneau `stops` 16:15–16:45 NY, `journal_cli.py stops` / `book-stop-fill`.
+- État au 13/10/2026 : mergée (PR #9) après validation humaine. `guardrail_trader/stops.py`, créneau `stops` 16:15–16:45 NY, `journal_cli.py stops` / `book-stop-fill`.
 
 ## T6 — Journal enrichi et closed_trades
 - `agent.py` : `_ORDER` exige `poche`, `these`, `catalyseur`, `fiabilite`, `horizon_jours`, `stop_pct`, `objectif_pct`, `invalidation`, `confiance`, `sources`. `SYSTEM_PROMPT` réécrit pour l'exiger et expliquer la calibration. Validation stricte dans `_dispatch` (ordre sans champ = rejeté avec raison).
@@ -71,6 +72,7 @@ Mise à jour du 12/10/2026 : décisions de validation de T0 intégrées (voir `C
 - Réussite d'une décision fermée = P&L net > 0 après commissions et slippage forfaitaire (0,05 %). Définition unique pour le taux de réussite et la calibration. À titre secondaire, P&L relatif à IWDA sur la même période (renseigné dès que T7 fournit le benchmark).
 - `dashboard_data.py` / `web/dashboard.html` : afficher poche, confiance, thèse.
 - Tests : rejet d'une proposition incomplète, migration sur une base existante.
+- Note du 13/10/2026 : remplacer le motif provisoire `non_precise` des ventes volontaires (T5) par les motifs réels, donnés par Claude et validés : `objectif` | `horizon` | `rebalancement` | `these_invalidee` (`stop` et `kill` restent posés par le code).
 
 ## T7 — Benchmark IWDA
 - `journal.py` : table `benchmark` (date, nav_iwda_equivalent). Au `init`, nombre de parts virtuelles = capital / prix IWDA du jour.
@@ -88,6 +90,8 @@ Mise à jour du 12/10/2026 : décisions de validation de T0 intégrées (voir `C
 - `scripts/weekly_report.py` : génère `reports/YYYY-WW.md` selon `CLAUDE.md` §8.3, depuis SQLite uniquement. Lancé par le scheduler le vendredi après `us_close`.
 - `guardrail_trader/alerts.py` : envoi ntfy (par défaut, topic dans `.env`) ou Telegram. Appelé en fin de run (résumé 5 lignes) et immédiatement sur kill switch, palier, échec de réconciliation, run non exécuté. Watchdog : alerte si aucun heartbeat depuis > 2 h en séance (étendre `scripts/gateway_watchdog.py`).
 - Tests : rapport sur base synthétique, alerte simulée.
+- Note du 13/10/2026 : alerte **immédiate** sur tout arrêt en code 3 et sur `stop_sync_failed`.
+- Décision du 13/10/2026 : ntfy ; topic lu dans `NTFY_TOPIC` (`.env`), serveur `https://ntfy.sh` par défaut, surchargeable par `NTFY_URL`. Trois niveaux : (a) résumé à chaque run ; (b) anomalie immédiate, priorité haute (code 3, `stop_sync_failed`, échec de réconciliation, changement de palier, kill switch, gateway indisponible) ; (c) watchdog « scheduler silencieux » après 2 h sans heartbeat en séance.
 
 ## T10 — Semaine à blanc
 - `.env` : `LLM_RUN_BUDGET_USD=1.50`, `LLM_MONTHLY_BUDGET_USD=120`, `ENABLE_WEB_SEARCH=1`, `IBKR_MARKET_DATA_TYPE=3`.
