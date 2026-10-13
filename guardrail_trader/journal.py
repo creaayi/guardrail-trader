@@ -112,7 +112,9 @@ MIGRATIONS = [
     ("closed_trades", "poche", "TEXT"), ("closed_trades", "confiance", "REAL"), ("closed_trades", "duree_jours", "INTEGER"),
     ("closed_trades", "entry_proposal_id", "INTEGER"), ("closed_trades", "exit_proposal_id", "INTEGER"),
     ("closed_trades", "slippage_base", "REAL"), ("closed_trades", "reussite", "INTEGER"),
-    ("closed_trades", "pnl_vs_benchmark_pct", "REAL"),        # secondary: trade return - IWDA return, in points (T7)
+    ("closed_trades", "pnl_vs_benchmark_pct", "REAL"),
+    # runs: the decision slot (T8/T10: dry-run consistency pairs runs of the same slot and day)
+    ("runs", "slot", "TEXT"),        # secondary: trade return - IWDA return, in points (T7)
 ]
 DECISION_COLUMNS = ("these", "catalyseur", "fiabilite", "horizon_jours", "stop_pct", "objectif_pct", "invalidation",
                     "confiance", "sources", "motif_sortie")
@@ -467,9 +469,10 @@ class Journal:
         return True
 
     # -- runs / proposals / orders -------------------------------------------
-    def start_run(self, mode: str) -> int:
+    def start_run(self, mode: str, slot: str | None = None) -> int:
         with self.db:
-            return self.db.execute("INSERT INTO runs(started_at,mode) VALUES(?,?)", (_now(), mode)).lastrowid
+            return self.db.execute("INSERT INTO runs(started_at,mode,slot) VALUES(?,?,?)",
+                                   (_now(), mode, slot)).lastrowid
 
     def abort_stale_runs(self, older_than_min: int = STALE_RUN_MINUTES) -> list[int]:
         """Close runs left as 'running' by a process that died mid-run (container restart, OOM, power loss).

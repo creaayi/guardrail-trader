@@ -224,3 +224,15 @@ corrigés, avec accord humain. Sans effet en phase 1 (`enable_hedge = false`).
   moyen pondéré par le nombre de décisions.
 - À faire par l'humain : renseigner `NTFY_TOPIC` dans `.env` ; installer la ligne crontab du watchdog sur
   l'hôte (`docs/alerts.md`).
+
+## 13/10/2026 — T10 (partie code) : outillage de la semaine à blanc
+
+- `SCHEDULER_DRY_RUN=1` (`.env`) : chaque run planifié passe en `--dry-run`, et chaque créneau de décision
+  (`eu_open`, `us_open`, `us_close`) est rejoué une seconde fois juste après le premier, sous le même verrou
+  (jamais deux connexions IBKR simultanées).
+- `runs.slot` (migration) ; `scripts/consistency.py` → `reports/dry-run-week.md` : coût LLM par run,
+  désaccord entre les deux runs d'un créneau (ordres et titres, distance de Jaccard ; sens opposés),
+  propositions bloquées par motif.
+- Procédure jusqu'au jour 0 : `docs/dry-run-week.md` (le journal de la semaine à blanc est archivé, puis
+  `init` refait au jour 0).
+- La semaine elle-même et le passage en réel restent des décisions humaines.

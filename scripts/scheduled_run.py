@@ -9,11 +9,16 @@ daylight-saving changes need no edits:
 Per slot per day: at most MAX_ATTEMPTS tries (e.g. if IB Gateway is briefly down),
 and never two runs at once (file lock). Weekends are skipped here; holidays are caught per
 exchange by run_bot's own market-hours check (no Claude call, no cost).
+
+Dry-run week (CLAUDE.md §10, T10): SCHEDULER_DRY_RUN=1 in .env adds --dry-run to every run, and each
+decision slot runs a second time right after the first (same lock, so never two IBKR connections at once);
+scripts/consistency.py compares the two sets of proposals.
 """
 from __future__ import annotations
 
 import fcntl
 import json
+import os
 import subprocess
 import sys
 from datetime import datetime
@@ -28,6 +33,7 @@ LOCK = ROOT / "data" / "scheduler.lock"
 LOGS = ROOT / "logs"
 NY = ZoneInfo("America/New_York")
 MAX_ATTEMPTS = 3
+DECISION_SLOTS = ("eu_open", "us_open", "us_close")     # slots where Claude decides (second dry run)
 DONE_CODES = (0, 3)   # 0 = ran / market closed / halted; 3 = reconcile failed (needs a human)
 
 
@@ -38,6 +44,11 @@ def slot_done(rc: int) -> bool:
     e.g. during IBKR's nightly re-login) - up to MAX_ATTEMPTS.
     """
     return rc in DONE_CODES
+
+
+def dry_run_week() -> bool:
+    """SCHEDULER_DRY_RUN=1 (from .env through docker compose's env_file) = the dry-run week."""
+    return os.getenv("SCHEDULER_DRY_RUN", "0") == "1"
 
 
 def write_heartbeat(heartbeat: dict) -> None:
@@ -75,6 +86,9 @@ def main(argv: list[str]) -> int:
     name = slot.name if slot else "manual"
     day = slot.day(now_ny) if slot else now_ny.date()
     run_args = ["--slot", slot.name, *slot.args] if slot else []
+    dry_week = dry_run_week()
+    if dry_week:
+        run_args.append("--dry-run")
 
     LOCK.parent.mkdir(exist_ok=True)
     with open(LOCK, "w") as lock:
@@ -95,6 +109,11 @@ def main(argv: list[str]) -> int:
         with open(log_path, "w") as log:
             rc = subprocess.run([sys.executable, str(ROOT / "scripts" / "run_bot.py"), *run_args],
                                 cwd=ROOT, stdout=log, stderr=subprocess.STDOUT, timeout=1800).returncode
+        if dry_week and rc == 0 and name in DECISION_SLOTS:
+            with open(log_path.with_name(log_path.stem + "_second.log"), "w") as log:
+                entry["second_rc"] = subprocess.run(
+                    [sys.executable, str(ROOT / "scripts" / "run_bot.py"), *run_args],
+                    cwd=ROOT, stdout=log, stderr=subprocess.STDOUT, timeout=1800).returncode
         entry["done"] = slot_done(rc)
         entry["last_rc"] = rc
         entry["last_log"] = str(log_path.relative_to(ROOT))
