@@ -65,6 +65,7 @@ nav:
       - Native (launchd): setup-native.md
       - Docker: setup-docker.md
   - Harness and agent loop: harness-and-loop.md
+  - Protective stops: stops.md
   - How stocks are chosen: stock-selection.md
   - Evals: evals.md
   - How to use: configuration.md

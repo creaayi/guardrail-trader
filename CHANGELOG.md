@@ -141,3 +141,15 @@ Décision humaine. Le compte paper est libellé en EUR et vaut 1 003 038 EUR (co
 Constaté au premier `check_connection.py --sample` : IBKR range les ETF cotés à Londres sur la place
 primaire `LSEETF`, pas `LSE`. `hedge.csv` (CSPX) et la liste des places autorisées (`risk/config.py`)
 corrigés, avec accord humain. Sans effet en phase 1 (`enable_hedge = false`).
+
+## 13/10/2026 — T5 validée et décisions pour T6 / T9
+
+- T5 validée et mergée (PR #9), avec les choix d'implémentation listés à l'entrée T5.
+- Les stops ne sont actifs qu'aux heures normales ; un gap peut exécuter un stop sous son niveau
+  (documenté dans `docs/stops.md`).
+- T6 : le motif provisoire `non_precise` est remplacé par `objectif` | `horizon` | `rebalancement` |
+  `these_invalidee` pour les ventes volontaires (`stop` et `kill` restent posés par le code).
+- **Alertes (T9)** : ntfy, topic `NTFY_TOPIC` (`.env`), serveur `https://ntfy.sh` par défaut (`NTFY_URL`
+  surchargeable). Trois niveaux : résumé à chaque run ; anomalie immédiate en priorité haute (tout arrêt en
+  code 3, `stop_sync_failed`, réconciliation, changement de palier, kill switch, gateway) ; watchdog
+  « scheduler silencieux » après 2 h sans heartbeat en séance.
