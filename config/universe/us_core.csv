@@ -1,1 +1,512 @@
 symbol,exchange,currency,name,sector,country,source
+A,SMART,USD,Agilent Technologies,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+AAPL,SMART,USD,Apple Inc.,Technology,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+ABBV,SMART,USD,AbbVie,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+ABNB,SMART,USD,Airbnb,Communications,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+ABT,SMART,USD,Abbott Laboratories,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+ACGL,SMART,USD,Arch Capital Group,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+ACN,SMART,USD,Accenture,Technology,US,S&P 500; cap unverified (index membership only); 2026-10-13
+ADBE,SMART,USD,Adobe Inc.,Technology,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+ADI,SMART,USD,Analog Devices,Technology,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+ADM,SMART,USD,Archer Daniels Midland,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+ADP,SMART,USD,Automatic Data Processing,"Consumer, Non-cyclical",US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+ADSK,SMART,USD,Autodesk,Technology,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+AEE,SMART,USD,Ameren,Utilities,US,S&P 500; cap unverified (index membership only); 2026-10-13
+AEP,SMART,USD,American Electric Power,Utilities,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+AES,SMART,USD,AES Corporation,Utilities,US,S&P 500; cap unverified (index membership only); 2026-10-13
+AFL,SMART,USD,Aflac,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+AIG,SMART,USD,American International Group,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+AIZ,SMART,USD,Assurant,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+AJG,SMART,USD,Arthur J. Gallagher & Co.,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+AKAM,SMART,USD,Akamai Technologies,Technology,US,S&P 500; cap unverified (index membership only); 2026-10-13
+ALAB,SMART,USD,Astera Labs,Technology,US,Nasdaq-100; cap unverified (index membership only); 2026-10-13
+ALB,SMART,USD,Albemarle Corporation,Basic Materials,US,S&P 500; cap unverified (index membership only); 2026-10-13
+ALGN,SMART,USD,Align Technology,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+ALL,SMART,USD,Allstate,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+ALLE,SMART,USD,Allegion,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+ALNY,SMART,USD,Alnylam Pharmaceuticals,"Consumer, Non-cyclical",US,Nasdaq-100; cap unverified (index membership only); 2026-10-13
+AMAT,SMART,USD,Applied Materials,Technology,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+AMCR,SMART,USD,Amcor,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+AMD,SMART,USD,Advanced Micro Devices,Technology,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+AME,SMART,USD,Ametek,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+AMGN,SMART,USD,Amgen,"Consumer, Non-cyclical",US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+AMP,SMART,USD,Ameriprise Financial,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+AMT,SMART,USD,American Tower,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+AMZN,SMART,USD,Amazon,Communications,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+ANET,SMART,USD,Arista Networks,Communications,US,S&P 500; cap unverified (index membership only); 2026-10-13
+AON,SMART,USD,Aon plc,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+AOS,SMART,USD,A. O. Smith,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+APA,SMART,USD,APA Corporation,Energy,US,S&P 500; cap unverified (index membership only); 2026-10-13
+APD,SMART,USD,Air Products,Basic Materials,US,S&P 500; cap unverified (index membership only); 2026-10-13
+APH,SMART,USD,Amphenol,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+APO,SMART,USD,Apollo Global Management,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+APP,SMART,USD,AppLovin,Communications,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+APTV,SMART,USD,Aptiv,"Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+ARE,SMART,USD,Alexandria Real Estate Equities,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+ARES,SMART,USD,Ares Management,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+ARM,SMART,USD,Arm Holdings,Technology,US,Nasdaq-100; cap unverified (index membership only); 2026-10-13
+ASML,SMART,USD,ASML Holding,Technology,US,Nasdaq-100; cap unverified (index membership only); 2026-10-13
+ATO,SMART,USD,Atmos Energy,Utilities,US,S&P 500; cap unverified (index membership only); 2026-10-13
+AVGO,SMART,USD,Broadcom,Technology,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+AVY,SMART,USD,Avery Dennison,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+AWK,SMART,USD,American Water Works,Utilities,US,S&P 500; cap unverified (index membership only); 2026-10-13
+AXON,SMART,USD,Axon Enterprise,Industrial,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+AXP,SMART,USD,American Express,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+AZO,SMART,USD,AutoZone,"Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+BA,SMART,USD,Boeing,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+BAC,SMART,USD,Bank of America,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+BALL,SMART,USD,Ball Corporation,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+BAX,SMART,USD,Baxter International,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+BBY,SMART,USD,Best Buy,"Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+BDX,SMART,USD,Becton Dickinson,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+BE,SMART,USD,Bloom Energy,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+BEN,SMART,USD,Franklin Resources,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+BF B,SMART,USD,Brown–Forman,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+BG,SMART,USD,Bunge Global,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+BIIB,SMART,USD,Biogen,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+BKNG,SMART,USD,Booking Holdings,Communications,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+BKR,SMART,USD,Baker Hughes,Energy,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+BLK,SMART,USD,BlackRock,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+BMY,SMART,USD,Bristol Myers Squibb,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+BNY,SMART,USD,BNY Mellon,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+BR,SMART,USD,Broadridge Financial Solutions,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+BRK B,SMART,USD,Berkshire Hathaway,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+BRO,SMART,USD,Brown & Brown,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+BSX,SMART,USD,Boston Scientific,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+BX,SMART,USD,Blackstone Inc.,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+BXP,SMART,USD,"BXP, Inc.",Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+C,SMART,USD,Citigroup,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+CAH,SMART,USD,Cardinal Health,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+CARR,SMART,USD,Carrier Global,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+CASY,SMART,USD,Casey's,"Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+CAT,SMART,USD,Caterpillar Inc.,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+CB,SMART,USD,Chubb Limited,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+CBOE,SMART,USD,Cboe Global Markets,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+CBRE,SMART,USD,CBRE Group,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+CCEP,SMART,USD,Coca-Cola Europacific Partners,"Consumer, Non-cyclical",US,Nasdaq-100; cap unverified (index membership only); 2026-10-13
+CCI,SMART,USD,Crown Castle,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+CCL,SMART,USD,Carnival Corporation,"Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+CDNS,SMART,USD,Cadence Design Systems,Technology,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+CDW,SMART,USD,CDW Corporation,Communications,US,S&P 500; cap unverified (index membership only); 2026-10-13
+CEG,SMART,USD,Constellation Energy,Utilities,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+CF,SMART,USD,CF Industries,Basic Materials,US,S&P 500; cap unverified (index membership only); 2026-10-13
+CFG,SMART,USD,Citizens Financial Group,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+CHD,SMART,USD,Church & Dwight,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+CHRW,SMART,USD,C.H. Robinson,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+CHTR,SMART,USD,Charter Communications,Communications,US,S&P 500; cap unverified (index membership only); 2026-10-13
+CI,SMART,USD,Cigna,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+CIEN,SMART,USD,Ciena,Communications,US,S&P 500; cap unverified (index membership only); 2026-10-13
+CINF,SMART,USD,Cincinnati Financial,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+CL,SMART,USD,Colgate-Palmolive,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+CLX,SMART,USD,Clorox,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+CMCSA,SMART,USD,Comcast,Communications,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+CME,SMART,USD,CME Group,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+CMG,SMART,USD,Chipotle Mexican Grill,"Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+CMI,SMART,USD,Cummins,"Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+CMS,SMART,USD,CMS Energy,Utilities,US,S&P 500; cap unverified (index membership only); 2026-10-13
+CNC,SMART,USD,Centene Corporation,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+CNP,SMART,USD,CenterPoint Energy,Utilities,US,S&P 500; cap unverified (index membership only); 2026-10-13
+COF,SMART,USD,Capital One,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+COHR,SMART,USD,Coherent Corp.,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+COIN,SMART,USD,Coinbase,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+COO,SMART,USD,Cooper Companies (The),"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+COP,SMART,USD,ConocoPhillips,Energy,US,S&P 500; cap unverified (index membership only); 2026-10-13
+COR,SMART,USD,Cencora,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+COST,SMART,USD,Costco,"Consumer, Cyclical",US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+CPAY,SMART,USD,Corpay,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+CPRT,SMART,USD,Copart,"Consumer, Cyclical",US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+CPT,SMART,USD,Camden Property Trust,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+CRH,SMART,USD,CRH plc,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+CRL,SMART,USD,Charles River Laboratories,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+CRM,SMART,USD,Salesforce,Technology,US,S&P 500; cap unverified (index membership only); 2026-10-13
+CRWD,SMART,USD,CrowdStrike,Technology,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+CRWV,SMART,USD,CoreWeave,Technology,US,Nasdaq-100; cap unverified (index membership only); 2026-10-13
+CSCO,SMART,USD,Cisco,Communications,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+CSGP,SMART,USD,CoStar Group,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+CSX,SMART,USD,CSX Corporation,Industrial,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+CTAS,SMART,USD,Cintas,"Consumer, Non-cyclical",US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+CTSH,SMART,USD,Cognizant,Technology,US,S&P 500; cap unverified (index membership only); 2026-10-13
+CVNA,SMART,USD,Carvana,"Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+CVS,SMART,USD,CVS Health,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+CVX,SMART,USD,Chevron Corporation,Energy,US,S&P 500; cap unverified (index membership only); 2026-10-13
+D,SMART,USD,Dominion Energy,Utilities,US,S&P 500; cap unverified (index membership only); 2026-10-13
+DAL,SMART,USD,Delta Air Lines,"Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+DASH,SMART,USD,DoorDash,Communications,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+DD,SMART,USD,DuPont,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+DDOG,SMART,USD,Datadog,Technology,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+DE,SMART,USD,Deere & Company,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+DECK,SMART,USD,Deckers Brands,"Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+DELL,SMART,USD,Dell Technologies,Technology,US,S&P 500; cap unverified (index membership only); 2026-10-13
+DG,SMART,USD,Dollar General,"Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+DGX,SMART,USD,Quest Diagnostics,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+DHI,SMART,USD,D. R. Horton,"Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+DHR,SMART,USD,Danaher Corporation,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+DIS,SMART,USD,Walt Disney Company (The),Communications,US,S&P 500; cap unverified (index membership only); 2026-10-13
+DLR,SMART,USD,Digital Realty,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+DLTR,SMART,USD,Dollar Tree,"Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+DOC,SMART,USD,Healthpeak Properties,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+DOV,SMART,USD,Dover Corporation,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+DOW,SMART,USD,Dow Inc.,Basic Materials,US,S&P 500; cap unverified (index membership only); 2026-10-13
+DPZ,SMART,USD,Domino's,"Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+DRI,SMART,USD,Darden Restaurants,"Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+DTE,SMART,USD,DTE Energy,Utilities,US,S&P 500; cap unverified (index membership only); 2026-10-13
+DUK,SMART,USD,Duke Energy,Utilities,US,S&P 500; cap unverified (index membership only); 2026-10-13
+DVA,SMART,USD,DaVita,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+DVN,SMART,USD,Devon Energy,Energy,US,S&P 500; cap unverified (index membership only); 2026-10-13
+DXCM,SMART,USD,Dexcom,"Consumer, Non-cyclical",US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+EBAY,SMART,USD,eBay Inc.,Communications,US,S&P 500; cap unverified (index membership only); 2026-10-13
+ECHO,SMART,USD,EchoStar,Communications,US,S&P 500; cap unverified (index membership only); 2026-10-13
+ECL,SMART,USD,Ecolab,Basic Materials,US,S&P 500; cap unverified (index membership only); 2026-10-13
+ED,SMART,USD,Consolidated Edison,Utilities,US,S&P 500; cap unverified (index membership only); 2026-10-13
+EFX,SMART,USD,Equifax,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+EG,SMART,USD,Everest Group,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+EIX,SMART,USD,Edison International,Utilities,US,S&P 500; cap unverified (index membership only); 2026-10-13
+EL,SMART,USD,Estée Lauder Companies (The),"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+ELV,SMART,USD,Elevance Health,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+EME,SMART,USD,Emcor,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+EMR,SMART,USD,Emerson Electric,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+EOG,SMART,USD,EOG Resources,Energy,US,S&P 500; cap unverified (index membership only); 2026-10-13
+EQIX,SMART,USD,Equinix,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+EQT,SMART,USD,EQT Corporation,Energy,US,S&P 500; cap unverified (index membership only); 2026-10-13
+ERIE,SMART,USD,Erie Indemnity,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+ES,SMART,USD,Eversource Energy,Utilities,US,S&P 500; cap unverified (index membership only); 2026-10-13
+ESS,SMART,USD,Essex Property Trust,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+ETN,SMART,USD,Eaton Corporation,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+ETR,SMART,USD,Entergy,Utilities,US,S&P 500; cap unverified (index membership only); 2026-10-13
+EVRG,SMART,USD,Evergy,Utilities,US,S&P 500; cap unverified (index membership only); 2026-10-13
+EW,SMART,USD,Edwards Lifesciences,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+EXC,SMART,USD,Exelon,Utilities,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+EXE,SMART,USD,Expand Energy,Energy,US,S&P 500; cap unverified (index membership only); 2026-10-13
+EXPD,SMART,USD,Expeditors International,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+EXPE,SMART,USD,Expedia Group,Communications,US,S&P 500; cap unverified (index membership only); 2026-10-13
+EXR,SMART,USD,Extra Space Storage,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+F,SMART,USD,Ford Motor Company,"Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+FANG,SMART,USD,Diamondback Energy,Energy,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+FAST,SMART,USD,Fastenal,"Consumer, Cyclical",US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+FCX,SMART,USD,Freeport-McMoRan,Basic Materials,US,S&P 500; cap unverified (index membership only); 2026-10-13
+FDS,SMART,USD,FactSet,Communications,US,S&P 500; cap unverified (index membership only); 2026-10-13
+FDX,SMART,USD,FedEx,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+FE,SMART,USD,FirstEnergy,Utilities,US,S&P 500; cap unverified (index membership only); 2026-10-13
+FER,SMART,USD,Ferrovial,Industrial,US,Nasdaq-100; cap unverified (index membership only); 2026-10-13
+FERG,SMART,USD,Ferguson Enterprises,"Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+FFIV,SMART,USD,"F5, Inc.",Communications,US,S&P 500; cap unverified (index membership only); 2026-10-13
+FICO,SMART,USD,Fair Isaac,Technology,US,S&P 500; cap unverified (index membership only); 2026-10-13
+FIS,SMART,USD,Fidelity National Information Services,Technology,US,S&P 500; cap unverified (index membership only); 2026-10-13
+FISV,SMART,USD,Fiserv,Technology,US,S&P 500; cap unverified (index membership only); 2026-10-13
+FITB,SMART,USD,Fifth Third Bancorp,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+FIX,SMART,USD,Comfort Systems USA,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+FLEX,SMART,USD,Flex Ltd.,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+FOXA,SMART,USD,Fox Corporation (Class A),Communications,US,S&P 500; cap unverified (index membership only); 2026-10-13
+FRT,SMART,USD,Federal Realty Investment Trust,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+FSLR,SMART,USD,First Solar,Energy,US,S&P 500; cap unverified (index membership only); 2026-10-13
+FTNT,SMART,USD,Fortinet,Technology,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+FTV,SMART,USD,Fortive,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+GD,SMART,USD,General Dynamics,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+GDDY,SMART,USD,GoDaddy,Communications,US,S&P 500; cap unverified (index membership only); 2026-10-13
+GE,SMART,USD,GE Aerospace,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+GEHC,SMART,USD,GE HealthCare,"Consumer, Non-cyclical",US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+GEN,SMART,USD,Gen Digital,Communications,US,S&P 500; cap unverified (index membership only); 2026-10-13
+GEV,SMART,USD,GE Vernova,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+GILD,SMART,USD,Gilead Sciences,"Consumer, Non-cyclical",US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+GIS,SMART,USD,General Mills,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+GL,SMART,USD,Globe Life,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+GLW,SMART,USD,Corning Inc.,Communications,US,S&P 500; cap unverified (index membership only); 2026-10-13
+GM,SMART,USD,General Motors,"Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+GNRC,SMART,USD,Generac,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+GOOGL,SMART,USD,Alphabet Inc. (Class A),Communications,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+GPC,SMART,USD,Genuine Parts Company,"Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+GPN,SMART,USD,Global Payments,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+GRMN,SMART,USD,Garmin,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+GS,SMART,USD,Goldman Sachs,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+GWW,SMART,USD,W. W. Grainger,"Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+HAL,SMART,USD,Halliburton,Energy,US,S&P 500; cap unverified (index membership only); 2026-10-13
+HAS,SMART,USD,Hasbro,"Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+HBAN,SMART,USD,Huntington Bancshares,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+HCA,SMART,USD,HCA Healthcare,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+HD,SMART,USD,Home Depot (The),"Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+HIG,SMART,USD,Hartford (The),Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+HII,SMART,USD,Huntington Ingalls Industries,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+HLT,SMART,USD,Hilton Worldwide,"Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+HON,SMART,USD,Honeywell Technologies,Industrial,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+HOOD,SMART,USD,Robinhood Markets,Communications,US,S&P 500; cap unverified (index membership only); 2026-10-13
+HPE,SMART,USD,Hewlett Packard Enterprise,Technology,US,S&P 500; cap unverified (index membership only); 2026-10-13
+HPQ,SMART,USD,HP Inc.,Technology,US,S&P 500; cap unverified (index membership only); 2026-10-13
+HRL,SMART,USD,Hormel Foods,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+HSIC,SMART,USD,Henry Schein,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+HST,SMART,USD,Host Hotels & Resorts,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+HSY,SMART,USD,Hershey Company (The),"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+HUBB,SMART,USD,Hubbell Incorporated,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+HUM,SMART,USD,Humana,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+HWM,SMART,USD,Howmet Aerospace,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+IBKR,SMART,USD,Interactive Brokers,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+IBM,SMART,USD,IBM,Technology,US,S&P 500; cap unverified (index membership only); 2026-10-13
+ICE,SMART,USD,Intercontinental Exchange,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+IDXX,SMART,USD,Idexx Laboratories,"Consumer, Non-cyclical",US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+IEX,SMART,USD,IDEX Corporation,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+IFF,SMART,USD,International Flavors & Fragrances,Basic Materials,US,S&P 500; cap unverified (index membership only); 2026-10-13
+ILMN,SMART,USD,"Illumina, Inc.","Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+INCY,SMART,USD,Incyte,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+INTC,SMART,USD,Intel,Technology,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+INTU,SMART,USD,Intuit,Technology,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+INVH,SMART,USD,Invitation Homes,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+IP,SMART,USD,International Paper,Basic Materials,US,S&P 500; cap unverified (index membership only); 2026-10-13
+IQV,SMART,USD,IQVIA,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+IR,SMART,USD,Ingersoll Rand,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+IRM,SMART,USD,Iron Mountain,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+ISRG,SMART,USD,Intuitive Surgical,"Consumer, Non-cyclical",US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+IT,SMART,USD,Gartner,Technology,US,S&P 500; cap unverified (index membership only); 2026-10-13
+ITW,SMART,USD,Illinois Tool Works,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+IVZ,SMART,USD,Invesco,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+J,SMART,USD,Jacobs Solutions,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+JBHT,SMART,USD,J.B. Hunt,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+JBL,SMART,USD,Jabil,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+JCI,SMART,USD,Johnson Controls,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+JKHY,SMART,USD,Jack Henry & Associates,Technology,US,S&P 500; cap unverified (index membership only); 2026-10-13
+JNJ,SMART,USD,Johnson & Johnson,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+JPM,SMART,USD,JPMorgan Chase,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+KDP,SMART,USD,Keurig Dr Pepper,"Consumer, Non-cyclical",US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+KEY,SMART,USD,KeyCorp,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+KEYS,SMART,USD,Keysight Technologies,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+KHC,SMART,USD,Kraft Heinz,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+KIM,SMART,USD,Kimco Realty,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+KKR,SMART,USD,KKR & Co.,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+KLAC,SMART,USD,KLA Corporation,Technology,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+KMB,SMART,USD,Kimberly-Clark,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+KMI,SMART,USD,Kinder Morgan,Energy,US,S&P 500; cap unverified (index membership only); 2026-10-13
+KO,SMART,USD,Coca-Cola Company (The),"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+KR,SMART,USD,Kroger,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+KVUE,SMART,USD,Kenvue,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+L,SMART,USD,Loews Corporation,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+LDOS,SMART,USD,Leidos,Technology,US,S&P 500; cap unverified (index membership only); 2026-10-13
+LEN,SMART,USD,Lennar,"Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+LH,SMART,USD,Labcorp,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+LHX,SMART,USD,L3Harris,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+LII,SMART,USD,Lennox International,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+LIN,SMART,USD,Linde plc,Basic Materials,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+LITE,SMART,USD,Lumentum,Technology,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+LLY,SMART,USD,Lilly (Eli),"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+LMT,SMART,USD,Lockheed Martin,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+LNT,SMART,USD,Alliant Energy,Utilities,US,S&P 500; cap unverified (index membership only); 2026-10-13
+LOW,SMART,USD,Lowe's,"Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+LRCX,SMART,USD,Lam Research,Technology,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+LULU,SMART,USD,Lululemon Athletica,"Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+LUV,SMART,USD,Southwest Airlines,"Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+LVS,SMART,USD,Las Vegas Sands,"Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+LYB,SMART,USD,LyondellBasell,Basic Materials,US,S&P 500; cap unverified (index membership only); 2026-10-13
+LYV,SMART,USD,Live Nation Entertainment,"Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+MA,SMART,USD,Mastercard,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+MAA,SMART,USD,Mid-America Apartment Communities,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+MAR,SMART,USD,Marriott International,"Consumer, Cyclical",US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+MAS,SMART,USD,Masco,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+MCD,SMART,USD,McDonald's,"Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+MCHP,SMART,USD,Microchip Technology,Technology,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+MCK,SMART,USD,McKesson Corporation,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+MCO,SMART,USD,Moody's Corporation,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+MDLZ,SMART,USD,Mondelez International,"Consumer, Non-cyclical",US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+MDT,SMART,USD,Medtronic,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+MELI,SMART,USD,Mercado Libre,Communications,US,Nasdaq-100; cap unverified (index membership only); 2026-10-13
+MET,SMART,USD,MetLife,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+META,SMART,USD,Meta Platforms,Communications,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+MGM,SMART,USD,MGM Resorts,"Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+MKC,SMART,USD,McCormick & Company,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+MLM,SMART,USD,Martin Marietta Materials,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+MMM,SMART,USD,3M,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+MNST,SMART,USD,Monster Beverage,"Consumer, Non-cyclical",US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+MO,SMART,USD,Altria,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+MOS,SMART,USD,Mosaic Company (The),Basic Materials,US,S&P 500; cap unverified (index membership only); 2026-10-13
+MPC,SMART,USD,Marathon Petroleum,Energy,US,S&P 500; cap unverified (index membership only); 2026-10-13
+MPWR,SMART,USD,Monolithic Power Systems,Technology,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+MRK,SMART,USD,Merck & Co.,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+MRNA,SMART,USD,Moderna,"Consumer, Non-cyclical",US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+MRSH,SMART,USD,Marsh McLennan,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+MRVL,SMART,USD,Marvell Technology,Technology,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+MS,SMART,USD,Morgan Stanley,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+MSCI,SMART,USD,MSCI,Technology,US,S&P 500; cap unverified (index membership only); 2026-10-13
+MSFT,SMART,USD,Microsoft,Technology,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+MSI,SMART,USD,Motorola Solutions,Communications,US,S&P 500; cap unverified (index membership only); 2026-10-13
+MSTR,SMART,USD,MicroStrategy,Technology,US,Nasdaq-100; cap unverified (index membership only); 2026-10-13
+MTB,SMART,USD,M&T Bank,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+MTD,SMART,USD,Mettler Toledo,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+MU,SMART,USD,Micron Technology,Technology,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+NBIS,SMART,USD,Nebius Group,Technology,US,Nasdaq-100; cap unverified (index membership only); 2026-10-13
+NCLH,SMART,USD,Norwegian Cruise Line Holdings,"Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+NDAQ,SMART,USD,"Nasdaq, Inc.",Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+NDSN,SMART,USD,Nordson Corporation,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+NEE,SMART,USD,NextEra Energy,Utilities,US,S&P 500; cap unverified (index membership only); 2026-10-13
+NEM,SMART,USD,Newmont,Basic Materials,US,S&P 500; cap unverified (index membership only); 2026-10-13
+NFLX,SMART,USD,Netflix,Communications,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+NI,SMART,USD,NiSource,Utilities,US,S&P 500; cap unverified (index membership only); 2026-10-13
+NKE,SMART,USD,"Nike, Inc.","Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+NOC,SMART,USD,Northrop Grumman,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+NOW,SMART,USD,ServiceNow,Technology,US,S&P 500; cap unverified (index membership only); 2026-10-13
+NRG,SMART,USD,NRG Energy,Utilities,US,S&P 500; cap unverified (index membership only); 2026-10-13
+NSC,SMART,USD,Norfolk Southern,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+NTAP,SMART,USD,NetApp,Technology,US,S&P 500; cap unverified (index membership only); 2026-10-13
+NTRS,SMART,USD,Northern Trust,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+NUE,SMART,USD,Nucor,Basic Materials,US,S&P 500; cap unverified (index membership only); 2026-10-13
+NVDA,SMART,USD,Nvidia,Technology,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+NVR,SMART,USD,"NVR, Inc.","Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+NWSA,SMART,USD,News Corp (Class A),Communications,US,S&P 500; cap unverified (index membership only); 2026-10-13
+NXPI,SMART,USD,NXP Semiconductors,Technology,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+O,SMART,USD,Realty Income,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+ODFL,SMART,USD,Old Dominion,Industrial,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+OKE,SMART,USD,Oneok,Energy,US,S&P 500; cap unverified (index membership only); 2026-10-13
+OMC,SMART,USD,Omnicom Group,Communications,US,S&P 500; cap unverified (index membership only); 2026-10-13
+ON,SMART,USD,ON Semiconductor,Technology,US,S&P 500; cap unverified (index membership only); 2026-10-13
+ORCL,SMART,USD,Oracle Corporation,Technology,US,S&P 500; cap unverified (index membership only); 2026-10-13
+ORLY,SMART,USD,O'Reilly Automotive,"Consumer, Cyclical",US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+OTIS,SMART,USD,Otis Worldwide,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+OXY,SMART,USD,Occidental Petroleum,Energy,US,S&P 500; cap unverified (index membership only); 2026-10-13
+P,SMART,USD,Everpure,Technology,US,S&P 500; cap unverified (index membership only); 2026-10-13
+PANW,SMART,USD,Palo Alto Networks,Communications,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+PAYX,SMART,USD,Paychex,Technology,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+PCAR,SMART,USD,Paccar,"Consumer, Cyclical",US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+PCG,SMART,USD,PG&E Corporation,Utilities,US,S&P 500; cap unverified (index membership only); 2026-10-13
+PDD,SMART,USD,PDD Holdings,Communications,US,Nasdaq-100; cap unverified (index membership only); 2026-10-13
+PEG,SMART,USD,Public Service Enterprise Group,Utilities,US,S&P 500; cap unverified (index membership only); 2026-10-13
+PEP,SMART,USD,PepsiCo,"Consumer, Non-cyclical",US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+PFE,SMART,USD,Pfizer,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+PFG,SMART,USD,Principal Financial Group,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+PG,SMART,USD,Procter & Gamble,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+PGR,SMART,USD,Progressive Corporation,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+PH,SMART,USD,Parker Hannifin,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+PHM,SMART,USD,PulteGroup,"Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+PKG,SMART,USD,Packaging Corporation of America,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+PLD,SMART,USD,Prologis,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+PLTR,SMART,USD,Palantir Technologies,Technology,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+PM,SMART,USD,Philip Morris International,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+PNC,SMART,USD,PNC Financial Services,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+PNR,SMART,USD,Pentair,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+PNW,SMART,USD,Pinnacle West Capital,Utilities,US,S&P 500; cap unverified (index membership only); 2026-10-13
+PODD,SMART,USD,Insulet Corporation,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+PPG,SMART,USD,PPG Industries,Basic Materials,US,S&P 500; cap unverified (index membership only); 2026-10-13
+PPL,SMART,USD,PPL Corporation,Utilities,US,S&P 500; cap unverified (index membership only); 2026-10-13
+PRU,SMART,USD,Prudential Financial,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+PSA,SMART,USD,Public Storage,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+PSX,SMART,USD,Phillips 66,Energy,US,S&P 500; cap unverified (index membership only); 2026-10-13
+PTC,SMART,USD,PTC Inc.,Technology,US,S&P 500; cap unverified (index membership only); 2026-10-13
+PWR,SMART,USD,Quanta Services,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+PYPL,SMART,USD,PayPal,"Consumer, Non-cyclical",US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+Q,SMART,USD,Qnity Electronics,Basic Materials,US,S&P 500; cap unverified (index membership only); 2026-10-13
+QCOM,SMART,USD,Qualcomm,Technology,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+RCL,SMART,USD,Royal Caribbean Group,"Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+RDDT,SMART,USD,Reddit,Communications,US,S&P 500; cap unverified (index membership only); 2026-10-13
+REG,SMART,USD,Regency Centers,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+REGN,SMART,USD,Regeneron Pharmaceuticals,"Consumer, Non-cyclical",US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+RF,SMART,USD,Regions Financial Corporation,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+RJF,SMART,USD,Raymond James Financial,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+RKLB,SMART,USD,Rocket Lab,Industrial,US,Nasdaq-100; cap unverified (index membership only); 2026-10-13
+RL,SMART,USD,Ralph Lauren Corporation,"Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+RMD,SMART,USD,ResMed|,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+ROK,SMART,USD,Rockwell Automation,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+ROL,SMART,USD,"Rollins, Inc.","Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+ROP,SMART,USD,Roper Technologies,Technology,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+ROST,SMART,USD,Ross Stores,"Consumer, Cyclical",US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+RSG,SMART,USD,Republic Services,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+RTX,SMART,USD,RTX Corporation,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+RVTY,SMART,USD,Revvity,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+SBAC,SMART,USD,SBA Communications,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+SBUX,SMART,USD,Starbucks,"Consumer, Cyclical",US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+SCHW,SMART,USD,Charles Schwab Corporation,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+SHOP,SMART,USD,Shopify,Communications,US,Nasdaq-100; cap unverified (index membership only); 2026-10-13
+SHW,SMART,USD,Sherwin-Williams,Basic Materials,US,S&P 500; cap unverified (index membership only); 2026-10-13
+SJM,SMART,USD,J.M. Smucker Company (The),"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+SKYD,SMART,USD,Skydance Corporation,Communications,US,S&P 500; cap unverified (index membership only); 2026-10-13
+SLB,SMART,USD,Schlumberger,Energy,US,S&P 500; cap unverified (index membership only); 2026-10-13
+SMCI,SMART,USD,Supermicro,Technology,US,S&P 500; cap unverified (index membership only); 2026-10-13
+SNA,SMART,USD,Snap-on,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+SNDK,SMART,USD,Sandisk,Technology,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+SNPS,SMART,USD,Synopsys,Technology,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+SO,SMART,USD,Southern Company,Utilities,US,S&P 500; cap unverified (index membership only); 2026-10-13
+SOLV,SMART,USD,Solventum,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+SPG,SMART,USD,Simon Property Group,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+SPGI,SMART,USD,S&P Global,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+SRE,SMART,USD,Sempra,Utilities,US,S&P 500; cap unverified (index membership only); 2026-10-13
+STE,SMART,USD,Steris,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+STLD,SMART,USD,Steel Dynamics,Basic Materials,US,S&P 500; cap unverified (index membership only); 2026-10-13
+STT,SMART,USD,State Street Corporation,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+STX,SMART,USD,Seagate Technology,Technology,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+STZ,SMART,USD,Constellation Brands,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+SW,SMART,USD,Smurfit Westrock,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+SWK,SMART,USD,Stanley Black & Decker,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+SWKS,SMART,USD,Skyworks Solutions,Technology,US,S&P 500; cap unverified (index membership only); 2026-10-13
+SYF,SMART,USD,Synchrony Financial,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+SYK,SMART,USD,Stryker Corporation,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+SYY,SMART,USD,Sysco,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+T,SMART,USD,AT&T,Communications,US,S&P 500; cap unverified (index membership only); 2026-10-13
+TDG,SMART,USD,TransDigm Group,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+TDY,SMART,USD,Teledyne Technologies,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+TECH,SMART,USD,Bio-Techne,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+TEL,SMART,USD,TE Connectivity,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+TER,SMART,USD,Teradyne,Technology,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+TFC,SMART,USD,Truist Financial,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+TGT,SMART,USD,Target Corporation,"Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+TJX,SMART,USD,TJX Companies,"Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+TKO,SMART,USD,TKO Group Holdings,"Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+TMO,SMART,USD,Thermo Fisher Scientific,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+TMUS,SMART,USD,T-Mobile US,Communications,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+TPL,SMART,USD,Texas Pacific Land Corporation,Energy,US,S&P 500; cap unverified (index membership only); 2026-10-13
+TPR,SMART,USD,"Tapestry, Inc.","Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+TRGP,SMART,USD,Targa Resources,Energy,US,S&P 500; cap unverified (index membership only); 2026-10-13
+TRI,SMART,USD,Thomson Reuters,Communications,US,Nasdaq-100; cap unverified (index membership only); 2026-10-13
+TRMB,SMART,USD,Trimble Inc.,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+TROW,SMART,USD,T. Rowe Price,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+TRV,SMART,USD,Travelers Companies (The),Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+TSCO,SMART,USD,Tractor Supply,"Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+TSLA,SMART,USD,"Tesla, Inc.","Consumer, Cyclical",US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+TSN,SMART,USD,Tyson Foods,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+TT,SMART,USD,Trane Technologies,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+TTWO,SMART,USD,Take-Two Interactive,Technology,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+TWLO,SMART,USD,Twilio,Technology,US,S&P 500; cap unverified (index membership only); 2026-10-13
+TXN,SMART,USD,Texas Instruments,Technology,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+TXT,SMART,USD,Textron,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+TYL,SMART,USD,Tyler Technologies,Technology,US,S&P 500; cap unverified (index membership only); 2026-10-13
+UAL,SMART,USD,United Airlines Holdings,"Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+UBER,SMART,USD,Uber,Communications,US,S&P 500; cap unverified (index membership only); 2026-10-13
+UDR,SMART,USD,"UDR, Inc.",Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+UHS,SMART,USD,Universal Health Services,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+ULTA,SMART,USD,Ulta Beauty,"Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+UNH,SMART,USD,UnitedHealth Group,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+UNP,SMART,USD,Union Pacific Corporation,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+UPS,SMART,USD,United Parcel Service,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+URI,SMART,USD,United Rentals,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+USB,SMART,USD,U.S. Bancorp,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+V,SMART,USD,Visa Inc.,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+VEEV,SMART,USD,Veeva Systems,Technology,US,S&P 500; cap unverified (index membership only); 2026-10-13
+VICI,SMART,USD,Vici Properties,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+VLO,SMART,USD,Valero Energy,Energy,US,S&P 500; cap unverified (index membership only); 2026-10-13
+VLTO,SMART,USD,Veralto,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+VMC,SMART,USD,Vulcan Materials Company,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+VMRK,SMART,USD,Vivmark Residential,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+VRSK,SMART,USD,Verisk Analytics,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+VRSN,SMART,USD,Verisign,Communications,US,S&P 500; cap unverified (index membership only); 2026-10-13
+VRT,SMART,USD,Vertiv,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+VRTX,SMART,USD,Vertex Pharmaceuticals,"Consumer, Non-cyclical",US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+VST,SMART,USD,Vistra Corp.,Utilities,US,S&P 500; cap unverified (index membership only); 2026-10-13
+VTR,SMART,USD,Ventas,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+VTRS,SMART,USD,Viatris,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+VZ,SMART,USD,Verizon,Communications,US,S&P 500; cap unverified (index membership only); 2026-10-13
+WAB,SMART,USD,Wabtec,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+WAT,SMART,USD,Waters Corporation,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+WDAY,SMART,USD,"Workday, Inc.",Technology,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+WDC,SMART,USD,Western Digital,Technology,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+WEC,SMART,USD,WEC Energy Group,Utilities,US,S&P 500; cap unverified (index membership only); 2026-10-13
+WELL,SMART,USD,Welltower,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+WFC,SMART,USD,Wells Fargo,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+WM,SMART,USD,Waste Management,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+WMB,SMART,USD,Williams Companies,Energy,US,S&P 500; cap unverified (index membership only); 2026-10-13
+WMT,SMART,USD,Walmart,"Consumer, Cyclical",US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+WRB,SMART,USD,W. R. Berkley Corporation,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+WSM,SMART,USD,"Williams-Sonoma, Inc.","Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+WST,SMART,USD,West Pharmaceutical Services,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+WTW,SMART,USD,Willis Towers Watson,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+WY,SMART,USD,Weyerhaeuser,Financial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+WYNN,SMART,USD,Wynn Resorts,"Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+XEL,SMART,USD,Xcel Energy,Utilities,US,S&P 500 + Nasdaq-100; cap unverified (index membership only); 2026-10-13
+XOM,SMART,USD,ExxonMobil,Energy,US,S&P 500; cap unverified (index membership only); 2026-10-13
+XYL,SMART,USD,Xylem Inc.,Industrial,US,S&P 500; cap unverified (index membership only); 2026-10-13
+XYZ,SMART,USD,"Block, Inc.","Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+YUM,SMART,USD,Yum! Brands,"Consumer, Cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+ZBH,SMART,USD,Zimmer Biomet,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13
+ZBRA,SMART,USD,Zebra Technologies,Technology,US,S&P 500; cap unverified (index membership only); 2026-10-13
+ZTS,SMART,USD,Zoetis,"Consumer, Non-cyclical",US,S&P 500; cap unverified (index membership only); 2026-10-13

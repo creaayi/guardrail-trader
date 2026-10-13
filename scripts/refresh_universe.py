@@ -8,7 +8,7 @@ Sources (public index constituents):
 IBKR (read-only connection, IB Gateway must be running):
   * contract resolution: US by symbol, EU by ISIN; only primary exchanges SBF, AEB, IBIS, LSE, EBS are kept;
   * sector = ContractDetails.industry: one classification for US and EU (max_sector_pct compares them);
-  * daily bars, 6 months, stored in the bar cache (data/bars.sqlite, pence converted with priceMagnifier):
+  * daily bars, 1 year, stored in the bar cache (data/bars.sqlite, pence converted with priceMagnifier):
     >= MIN_BARS bars (listed for 6 months or more) and 20-day average traded value computed from the
     cache >= [momentum] min_traded_value (5 M; USD for US, EUR for EU). The ranking re-applies the same
     liquidity filter at every run.
@@ -137,9 +137,9 @@ def write_csv(path: Path, rows: list[list[str]], min_rows: int) -> None:
 
 # ------------------------------------------------------------------ IBKR
 def _bars(broker, contract, pace: float, cache: BarCache | None = None, key: str = "", magnifier: int = 1) -> list[Bar]:
-    """6 months of daily bars in currency units; stored in the bar cache when one is given."""
+    """1 year of daily bars in currency units (the momentum ranking needs 127); cached when a cache is given."""
     time.sleep(pace)
-    raw = broker.ib.reqHistoricalData(contract, endDateTime="", durationStr="6 M", barSizeSetting="1 day",
+    raw = broker.ib.reqHistoricalData(contract, endDateTime="", durationStr="1 Y", barSizeSetting="1 day",
                                       whatToShow="TRADES", useRTH=True, formatDate=1, timeout=60) or []
     bars = from_ibkr(raw, magnifier)
     if cache is not None and bars:
