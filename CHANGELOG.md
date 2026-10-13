@@ -105,3 +105,13 @@ T3 validée et mergée (PR #5), y compris l'interprétation de la taille minimal
   de journée, heure de Paris.
 - `config.py` : le port hôte 14002 (gateway Docker paper) est reconnu comme port paper, 14001 comme son
   équivalent réel, refusé en mode paper.
+
+## 13/10/2026 — Amendement : capital 800 000 → 950 000 EUR
+
+Décision humaine. Le compte paper est libellé en EUR et vaut 1 003 038 EUR (constaté au premier
+`check_connection.py`), et non 1 M USD comme supposé le 12/10/2026 (décision 8).
+- `config/risk.toml` : `capital` 800 000 → **950 000** EUR ; `CLAUDE.md` §1 et §4 mis à jour.
+- Motif : utiliser l'essentiel du compte tout en gardant une marge (~53 000 EUR) sous le garde-fou de
+  `journal_cli.py init` (valeur liquidative ≥ capital). Le garde-fou de chaque run reste comparé à la
+  valeur virtuelle courante du bot.
+- Le journal n'est pas encore initialisé : `init` déposera directement 950 000 EUR.

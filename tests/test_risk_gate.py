@@ -147,6 +147,7 @@ def test_input_state_not_mutated():
 
 def test_shipped_config_loads_and_is_fail_closed():
     c = load_risk_config()
+    assert (c.capital, c.base_currency) == (950000.0, "EUR")      # CHANGELOG 13/10/2026
     assert (c.max_position_pct, c.max_trades_per_month, c.max_drawdown_pct) == (2.0, 60, 15.0)
     assert (c.drawdown_resume_pct, c.drawdown_pause_pct, c.drawdown_pause_days, c.drawdown_reduce_pct,
             c.reduce_max_equity_pct, c.daily_loss_halt_pct) == (4.0, 8.0, 5, 12.0, 50.0, 3.0)

@@ -17,7 +17,7 @@ In Docker, `config/` is bind-mounted read-only, so edits on the host apply witho
 
 ```toml
 [budget]
-capital = 800000.0     # total virtual budget the bot may use
+capital = 950000.0     # total virtual budget the bot may use
 currency = "EUR"       # base currency for all accounting
 
 [limits]

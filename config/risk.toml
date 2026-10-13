@@ -1,7 +1,7 @@
 # Risk limits. Code enforces these; Claude can read them but never change them.
 
 [budget]
-capital = 800000.0     # total virtual budget the bot may use (paper account capped at 1 M USD; CHANGELOG 12/10/2026).
+capital = 950000.0     # total virtual budget the bot may use (EUR paper account ~1.0 M EUR; CHANGELOG 13/10/2026).
                        # init and every run refuse to start if the account's net liquidation in EUR is below this.
                        # Raising it needs `journal_cli.py topup --confirm` to deposit the difference into the ledger.
 currency = "EUR"       # base currency for all accounting
