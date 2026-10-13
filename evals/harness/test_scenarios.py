@@ -638,3 +638,62 @@ def test_benchmark_is_snapshotted_each_run_and_a_missing_quote_never_blocks(tmp_
     market.fx_rates = lambda: {"USD": 1.5, "EUR": 1.0}
     assert bot.run(None, market).status == "ok"
     assert bot.j.db.execute("SELECT nav_base FROM benchmark").fetchone()[0] == pytest.approx(5200.0)
+
+
+# ------------------------------------------------------------------ T8: slots and exchanges
+def _two_markets_cfg():
+    """The sim universe with BBB moved to Xetra (still quoted in USD to keep the sim's FX simple)."""
+    from dataclasses import replace
+
+    from evals.sim import UNIVERSE
+    uni = dict(UNIVERSE)
+    uni["BBB:USD"] = replace(uni["BBB:USD"], exchange="IBIS")
+    return replace(CFG, universe=uni)
+
+
+def test_us_close_never_trades_a_european_line(tmp_path):
+    """Invariant: in a US slot, an order on a European exchange is blocked by code, whatever the model says."""
+    from guardrail_trader.slots import SLOTS
+    bot = Bot(tmp_path, _two_markets_cfg(), holdings=HELD)
+    bot.broker.net_liquidation = 10000.0
+    sell_eu = order("BBB", 20, "SELL")
+    out = bot.run(submits(sell_eu, order("CCC", 5)), slot=SLOTS["us_close"])
+    assert out.status == "ok" and [(o.symbol, o.action) for o in bot.broker.orders.values()] == [("CCC", "BUY")]
+    blocked = bot.j.db.execute("SELECT block_reasons FROM proposals WHERE symbol='BBB'").fetchone()[0]
+    assert "IBIS is not tradable in this slot" in blocked
+
+
+def test_a_slot_whose_markets_are_all_closed_skips_claude(tmp_path):
+    """Invariant: eu_open on a European holiday (every EU exchange closed) costs nothing and orders nothing."""
+    from guardrail_trader.slots import SLOTS
+    bot = Bot(tmp_path, _two_markets_cfg())
+    out = bot.run(submits(order("CCC", 5)), SimMarket(open_={"SMART"}), slot=SLOTS["eu_open"])
+    assert out.status == "market_closed" and out.llm_calls == 0 and bot.broker.orders == {}
+
+
+def test_kill_switch_sells_each_line_when_its_own_exchange_is_open(tmp_path):
+    """Invariant: a kill switch in a US slot sells the US lines at once; the European line is sold at the
+    next run where its exchange is open, never while it is closed."""
+    from guardrail_trader.slots import SLOTS
+    bot = Bot(tmp_path, _two_markets_cfg(), holdings=HELD)
+    bot.run()
+    out = bot.run(market=SimMarket(CRASH, open_={"SMART"}), slot=SLOTS["us_close"])
+    assert out.status == "kill_switch"
+    assert [o.symbol for o in bot.broker.orders.values()] == ["AAA"] and bot.j.holdings_qty() == {"BBB:USD": 20}
+    bot.run(market=SimMarket(CRASH, open_={"SMART"}), slot=SLOTS["us_open"])     # still closed in Europe
+    assert bot.j.holdings_qty() == {"BBB:USD": 20}
+    bot.run(market=SimMarket(CRASH, open_={"IBIS"}), slot=SLOTS["eu_open"])
+    assert bot.j.holdings_qty() == {} and bot.reconciled()
+
+
+def test_claude_is_told_the_slot_and_the_rebalance_day(tmp_path):
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    from guardrail_trader.slots import SLOTS
+    bot = Bot(tmp_path, _two_markets_cfg())
+    client = submits()
+    bot.run(client, SimMarket(open_={"IBIS"}), slot=SLOTS["eu_open"],
+            now=datetime(2026, 10, 12, 10, 15, tzinfo=ZoneInfo("Europe/Paris")))
+    task = client.last_request["messages"][0]["content"][0]["text"]
+    assert "slot eu_open" in task and "IBIS" in task and "weekly pocket A rebalance" in task

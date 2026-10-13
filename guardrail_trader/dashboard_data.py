@@ -178,10 +178,11 @@ def build(j: Journal, cfg: RiskConfig, days: int | None = DEFAULT_DAYS) -> dict:
 
 def _scheduler_status() -> dict:
     """Heartbeat + last slots from scripts/scheduled_run.py, and the next scheduled slot."""
-    from datetime import datetime, timedelta
-    from zoneinfo import ZoneInfo
+    from datetime import datetime
+
+    from guardrail_trader.slots import PARIS, next_slot
     data = PROJECT_ROOT / "data"
-    out: dict = {"last_tick_ny": None, "next_slot_sydney": None, "recent": []}
+    out: dict = {"last_tick_ny": None, "next_slot_paris": None, "recent": []}
     try:
         out["last_tick_ny"] = json.loads((data / "scheduler_heartbeat.json").read_text()).get("last_tick_ny")
     except (FileNotFoundError, json.JSONDecodeError):
@@ -191,18 +192,10 @@ def _scheduler_status() -> dict:
         out["recent"] = [{"slot": k, **v} for k, v in sorted(state.items())[-6:]][::-1]
     except (FileNotFoundError, json.JSONDecodeError):
         pass
-    ny, syd = ZoneInfo("America/New_York"), ZoneInfo("Australia/Sydney")
-    now = datetime.now(ny)
-    for day in range(0, 8):
-        d = (now + timedelta(days=day)).date()
-        if d.weekday() >= 5:
-            continue
-        for name, (h, m) in (("open", (10, 30)), ("close", (15, 0))):
-            t = datetime(d.year, d.month, d.day, h, m, tzinfo=ny)
-            if t > now:
-                out["next_slot_sydney"] = t.astimezone(syd).isoformat(timespec="minutes")
-                out["next_slot_name"] = name
-                return out
+    nxt = next_slot(datetime.now(PARIS))
+    if nxt:
+        out["next_slot_paris"] = nxt[1].astimezone(PARIS).isoformat(timespec="minutes")
+        out["next_slot_name"] = nxt[0].name
     return out
 
 

@@ -3,6 +3,7 @@
   .venv/bin/python scripts/run_bot.py --dry-run --fake-claude   # whole harness, no API key, no orders
   .venv/bin/python scripts/run_bot.py --dry-run                 # real Claude, gate verdicts, no orders
   .venv/bin/python scripts/run_bot.py                           # paper trading (market must be open)
+  .venv/bin/python scripts/run_bot.py --slot eu_open            # trade only that slot's markets (scheduler)
 
 The run itself is guardrail_trader.pipeline.run_once(); this file wires in IBKR and the LLM.
 Exit codes: 0 ok/skipped, 1 error, 2 gateway unusable (transient), 3 needs a human (reconciliation / capital guard).
@@ -23,6 +24,7 @@ from guardrail_trader.config import PROJECT_ROOT, load_ibkr_config
 from guardrail_trader.journal import Journal
 from guardrail_trader.pipeline import IBKRMarketData, LLMSetup, run_once
 from guardrail_trader.risk import load_momentum_config, load_risk_config
+from guardrail_trader.slots import SLOTS
 
 
 def log(msg: str) -> None:
@@ -45,6 +47,7 @@ def main() -> int:
     ap.add_argument("--fill-timeout", type=float, default=120.0)
     ap.add_argument("--trail-stops", action="store_true", help="refresh held lines' bars and raise trailing stops")
     ap.add_argument("--stops-only", action="store_true", help="book stop fills, reconcile, place stops; no Claude")
+    ap.add_argument("--slot", choices=sorted(SLOTS), help="decision slot: trade only its markets (default: all open)")
     args = ap.parse_args()
 
     cfg = load_risk_config()
@@ -63,7 +66,8 @@ def main() -> int:
                             mode=mode, dry_run=args.dry_run, fill_timeout=args.fill_timeout, my_picks=picks,
                             web_search=os.getenv("ENABLE_WEB_SEARCH", "0") == "1", log=log,
                             bars=bars, momentum_cfg=load_momentum_config(),
-                            trail_stops=args.trail_stops, stops_only=args.stops_only)
+                            trail_stops=args.trail_stops, stops_only=args.stops_only,
+                            slot=SLOTS[args.slot] if args.slot else None)
     finally:
         bars.close()
         j.close()

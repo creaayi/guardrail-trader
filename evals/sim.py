@@ -212,8 +212,11 @@ class SimMarket:
     def price_all(self):
         return dict(self.quotes)
 
-    def market_open(self, now):
-        return self.open_
+    def open_exchanges(self, now, exchanges):
+        """open_: True = every exchange open, False = all closed, or a set of the open exchanges."""
+        if isinstance(self.open_, (set, frozenset)):
+            return set(exchanges) & self.open_
+        return set(exchanges) if self.open_ else set()
 
     def history_summary(self, key):
         px = self.quotes[key]

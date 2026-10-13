@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import json
 import traceback
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable
@@ -24,6 +24,7 @@ from guardrail_trader.journal import Journal
 from guardrail_trader.market import daily_history, is_open, market_sessions, price_instruments, summarize_history
 from guardrail_trader.metrics import BENCHMARK_KEY
 from guardrail_trader.momentum import rank
+from guardrail_trader.slots import ALL_EXCHANGES, Slot
 from guardrail_trader.risk import (
     Decision, MarketInfo, MomentumConfig, Proposal, RiskConfig, evaluate, instrument_key, kill_switch_triggered,
     liquidation_proposals,
@@ -62,8 +63,15 @@ class IBKRMarketData:
         inst = self.cfg.hedge.get(key) or self.cfg.universe.get(key)
         return None if inst is None else price_instruments(self.broker, [inst]).get(key)
 
-    def market_open(self, now: datetime) -> bool:
-        return is_open(market_sessions(self.broker, next(iter(self.cfg.universe.values()))), now)
+    def open_exchanges(self, now: datetime, exchanges) -> set[str]:
+        """The given exchanges that are open at `now` with >= 15 min left. Each is judged on one of its own
+        instruments' liquidHours, so a holiday on one exchange never closes another (T8)."""
+        out = set()
+        for ex in exchanges:
+            inst = next((i for i in self.cfg.universe.values() if i.exchange == ex), None)
+            if inst is not None and is_open(market_sessions(self.broker, inst), now):
+                out.add(ex)
+        return out
 
     def refresh_bars(self, keys: list[str], cache, pace: float = 10.5) -> None:
         """Latest daily bars for these instruments (held lines, for trailing stops), paced for IBKR."""
@@ -109,6 +117,19 @@ class LLMSetup:
     max_seconds: float | None = None         # agent loop budget; None = agent default
 
 
+def slot_task(slot: Slot | None, tradable: frozenset[str], now: datetime) -> str:
+    """The task message: what this slot may trade, and whether today is the weekly pocket A rebalance."""
+    task = (f"Run the portfolio review for slot {slot.name if slot else 'manual'}. Orders are accepted only on "
+            f"these exchanges, open now: {', '.join(sorted(tradable))} (SMART = US stocks). Instruments on other "
+            "exchanges are shown for valuation only; the gate blocks any order on them.")
+    if slot is not None and slot.rebalance(now):
+        return task + ("\nToday is Monday: the weekly pocket A rebalance (CLAUDE.md §6). Bring pocket A in line "
+                       "with the momentum ranking: exit lines that dropped out (motif_sortie rebalancement) and "
+                       "enter top-ranked names, within every limit.")
+    return task + ("\nNot a rebalance slot: adjustments and risk management only (exits on target, horizon or "
+                   "invalidated thesis, trims). New pocket A entries wait for Monday's rebalance.")
+
+
 def record_benchmark(j: Journal, market, cfg: RiskConfig, fx: dict[str, float], today, log) -> None:
     """The day's IWDA NAV next to the bot's (T7); the last run of the day wins, so us_close sets the close.
     Never blocks a run: a missing price is logged and the day is carried forward in the metrics."""
@@ -143,8 +164,10 @@ def run_once(broker, market, j: Journal, cfg: RiskConfig, llm: LLMSetup, *, mode
              fill_timeout: float = 120.0, my_picks: set[str] | None = None, web_search: bool = False,
              log: Callable[[str], None] = print, now: datetime | None = None,
              runs_dir: Path = RUNS_DIR, bars=None, momentum_cfg: MomentumConfig | None = None,
-             trail_stops: bool = False, stops_only: bool = False) -> int:
+             trail_stops: bool = False, stops_only: bool = False, slot: Slot | None = None) -> int:
     """bars (BarCache) + momentum_cfg: give Claude the pocket A ranking; omitted = no ranking.
+    slot: the decision slot (guardrail_trader/slots.py): only its exchanges that are open now are tradable,
+    for Claude, the gate and a kill-switch liquidation alike. None (manual run) = every exchange that is open.
     trail_stops: refresh held lines' bars and raise trailing stops (once a day, at the close slot).
     stops_only: book stop fills, reconcile, (re)place stops, then stop (evening sync slot)."""
     for stale_id in j.abort_stale_runs():
@@ -250,19 +273,26 @@ def run_once(broker, market, j: Journal, cfg: RiskConfig, llm: LLMSetup, *, mode
             state.daily_halt = (f"daily loss halt: the previous day lost {loss:.2f}% (> {cfg.daily_loss_halt_pct}%); "
                                 "no order today except protective stops")
 
-        usd_open = market.market_open(now or datetime.now(NY))
+        wanted = slot.exchanges if slot is not None else ALL_EXCHANGES
+        tradable = frozenset(market.open_exchanges(now or datetime.now(NY), wanted))
+        if dry_run and not tradable:
+            tradable = frozenset(wanted)          # a dry run judges orders as if its markets were open
+        state.tradable_exchanges = tradable
+        log(f"slot {slot.name if slot else 'manual'}: tradable now {sorted(tradable) or 'none'}")
+        sellable = [k for k in mine if cfg.universe[k].exchange in tradable]
 
         def liquidate() -> int:
-            """Sell every holding (limit slightly below reference). Only when the market is open."""
-            info = {k: MarketInfo(prices[k], fx[cfg.universe[k].currency], 0.0) for k in mine}
-            liq = liquidation_proposals(state, info, cfg)
-            if not dry_run and usd_open:
+            """Sell every holding whose exchange is tradable now (limit slightly below reference); the
+            others are sold at the next run where their exchange is open."""
+            info = {k: MarketInfo(prices[k], fx[cfg.universe[k].currency], 0.0) for k in sellable}
+            liq = liquidation_proposals(replace(state, holdings={k: state.holdings[k] for k in sellable}), info, cfg)
+            if not dry_run and liq:
                 rows = [(j.record_decision(run_id, Decision(p, True, [])), Decision(p, True, [])) for p in liq]
                 execute(rows, broker, j, fx, fill_timeout, log, stops=stops)
             return len(liq)
 
         if state.halted:
-            if mine and usd_open and not dry_run:
+            if sellable and not dry_run:
                 # The kill switch fired while the market was closed, or some sells didn't fill:
                 # keep liquidating at every open-market run until flat. Code decides, not Claude.
                 n = liquidate()
@@ -278,13 +308,15 @@ def run_once(broker, market, j: Journal, cfg: RiskConfig, llm: LLMSetup, *, mode
             log(f"KILL SWITCH: drawdown {state.drawdown_pct:.2f}% >= {cfg.max_drawdown_pct}%")
             n = liquidate()
             j.halt(f"drawdown {state.drawdown_pct:.2f}%")
-            j.finish_run(run_id, "kill_switch", state, f"liquidation orders: {n}; market open={usd_open}"
-                         + ("" if usd_open else "; will sell at the next open-market run"))
+            left = len(mine) - len(sellable)
+            j.finish_run(run_id, "kill_switch", state, f"liquidation orders: {n}"
+                         + (f"; {left} line(s) on closed exchanges sell at the next run where they are open"
+                            if left else ""))
             return 0
 
-        if not usd_open and not dry_run:
-            j.finish_run(run_id, "market_closed", state)
-            log("US market closed (or <15 min left). Skipping (no Claude call, no cost).")
+        if not tradable:
+            j.finish_run(run_id, "market_closed", state, f"no tradable exchange among {sorted(wanted)}")
+            log("The slot's markets are closed (or <15 min left). Skipping (no Claude call, no cost).")
             return 0
 
         # Account guard: the broker account must cover the bot's CURRENT virtual value (ledger cash +
@@ -329,7 +361,9 @@ def run_once(broker, market, j: Journal, cfg: RiskConfig, llm: LLMSetup, *, mode
             log(f"LLM {llm.provider}/{llm.model}; spent this month US${spent:.2f} of US${cap:.2f}")
         momentum = None
         if bars is not None and momentum_cfg is not None:
-            ranking = rank(cfg.universe, bars.bars, momentum_cfg, (now or datetime.now(NY)).date(), fx)
+            # Ranked within the markets this slot trades (each market gets its own top_n; T8)
+            ranking = rank({k: i for k, i in cfg.universe.items() if i.exchange in tradable}, bars.bars,
+                           momentum_cfg, (now or datetime.now(NY)).date(), fx)
             momentum = ranking.for_claude()
             log(f"momentum ranking as of {ranking.as_of or '-'}: {len(ranking.top)} ranked, excluded {ranking.excluded}")
         client = llm.make_client(market)
@@ -344,7 +378,7 @@ def run_once(broker, market, j: Journal, cfg: RiskConfig, llm: LLMSetup, *, mode
                 cost_fn=llm.cost_fn, run_budget_usd=run_budget,
                 on_usage=lambda usage, cost: j.record_llm_usage(run_id, llm.provider, llm.model, usage, cost))),
         )
-        result = agent.run()
+        result = agent.run(slot_task(slot, tradable, now or datetime.now(NY)))
         runs_dir.mkdir(parents=True, exist_ok=True)
         (runs_dir / f"run_{run_id}.json").write_text(json.dumps(_jsonable(result.transcript), indent=1, default=str))
         log(f"Claude: {result.turns} turns, tokens in/out {result.input_tokens}/{result.output_tokens}, "

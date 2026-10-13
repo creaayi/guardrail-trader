@@ -185,3 +185,20 @@ corrigés, avec accord humain. Sans effet en phase 1 (`enable_hedge = false`).
   sur la dernière valorisation du jour, apports retirés ; taux sans risque 0 ; 252 jours ; alpha = alpha de
   Jensen annualisé, (moyenne r_p − beta × moyenne r_b) × 252 ; jours fériés d'Euronext : dernière valeur reportée.
   Les seuils d'alpha du §9 (−6 %, −4 %, +3 %) s'appliquent à cet alpha annualisé.
+
+## 13/10/2026 — T8 appliquée : créneaux Europe
+
+- Créneaux (`guardrail_trader/slots.py`), chacun dans son fuseau : `eu_open` 10:00–11:00 Paris (SBF, AEB,
+  IBIS, LSE, EBS), `us_open` 10:30–11:30 New York, `us_close` 15:00–15:40 New York (US ; Europe en lecture,
+  stops suivis), `stops` 16:15–16:45 New York (inchangé). Le scheduler passe `--slot` à `run_bot.py`.
+- Ouverture évaluée **par place** sur les `liquidHours` d'un titre de cette place (jours fériés propres à
+  chacune). Seules les places du créneau ouvertes à l'instant sont négociables : la gate bloque tout autre
+  ordre (achat ou vente), y compris un ordre européen pendant `us_close`. Un kill switch vend chaque ligne
+  au premier run où **sa** place est ouverte.
+- Lundi, `eu_open` et `us_open` : Claude est prévenu du rebalancement hebdomadaire de la poche A.
+- Docker : gateway en `Europe/Paris`, redémarrage quotidien à 04:00 (prend effet à la recréation du conteneur).
+- **Interprétations proposées par Claude Code, à confirmer par l'humain** :
+  - le classement momentum est calculé **par marché du créneau** (les 40 premiers européens à `eu_open`, les
+    40 premiers US aux créneaux US), pour que chaque créneau ait des candidats ;
+  - hors lundi, le message de tâche dit « ajustements et gestion du risque seulement, pas de nouvelle entrée
+    de poche A avant le rebalancement du lundi » (§6). C'est une consigne du prompt, pas une règle de la gate.
