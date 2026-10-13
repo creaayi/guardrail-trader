@@ -1,9 +1,10 @@
 """Operator CLI for the journal (operator only - the bot never calls these).
 
   .venv/bin/python scripts/journal_cli.py init                 # deposit budget from config/risk.toml (once;
-                                                               #   needs IB Gateway: the account must cover it)
+                                                               #   needs IB Gateway: the account must cover it,
+                                                               #   and the benchmark IWDA buys its virtual units)
   .venv/bin/python scripts/journal_cli.py topup [--confirm]    # deposit up to `capital` in config/risk.toml (dry run without --confirm)
-  .venv/bin/python scripts/journal_cli.py status               # cash, holdings, halt state, recent activity
+  .venv/bin/python scripts/journal_cli.py status               # cash, holdings, halt state, vs IWDA, recent activity
   .venv/bin/python scripts/journal_cli.py reset-halt --confirm # re-arm after a kill switch
   .venv/bin/python scripts/journal_cli.py stops                # active protective stops
   .venv/bin/python scripts/journal_cli.py book-stop-fill --perm-id P --shares N --price X --commission C \
@@ -21,6 +22,8 @@ import sys
 from guardrail_trader.broker import BrokerSafetyError, IBKRBroker, check_capital
 from guardrail_trader.config import load_ibkr_config
 from guardrail_trader.journal import Journal
+from guardrail_trader.market import price_instruments
+from guardrail_trader.metrics import BENCHMARK_KEY, from_journal
 from guardrail_trader.risk import load_risk_config
 
 
@@ -50,17 +53,32 @@ def main() -> int:
 
     if args.cmd == "init":
         # Refuse a virtual budget the paper account can't pay for (read-only connection, no orders).
+        # The benchmark is 100% invested on day 1 (CLAUDE.md §1): no IWDA price, no start.
+        bench = cfg.hedge.get(BENCHMARK_KEY) or cfg.universe.get(BENCHMARK_KEY)
+        if bench is None:
+            print(f"Refusing to initialise: benchmark {BENCHMARK_KEY} is not in the hedge or universe files.")
+            return 2
         try:
             with IBKRBroker(load_ibkr_config(), readonly=True) as broker:
                 snap = broker.ensure_ready()
                 value = check_capital(snap.net_liquidation, broker.fx_to_base(snap.currency, cfg.base_currency),
                                       cfg.capital, cfg.base_currency)
+                bench_px = price_instruments(broker, [bench]).get(BENCHMARK_KEY)
+                bench_fx = broker.fx_to_base(bench.currency, cfg.base_currency)
         except BrokerSafetyError as e:
             print(f"Refusing to initialise: {e}")
             return 2
-        print(f"Account {snap.account_id}: {value:,.2f} {cfg.base_currency} covers capital {cfg.capital:,.2f}.")
+        if not bench_px:
+            print(f"Refusing to initialise: no price for the benchmark {BENCHMARK_KEY}; retry when IBKR quotes it.")
+            return 2
+        acct = snap.account_id
+        print(f"Account {acct[:2]}•••{acct[-2:]}: {value:,.2f} {cfg.base_currency} covers capital {cfg.capital:,.2f}.")
         j.init_budget(cfg.capital, cfg.base_currency)
         print(f"Deposited {cfg.capital:,.2f} {cfg.base_currency} into the virtual ledger.")
+        j.invest_benchmark(bench_px * bench_fx)
+        nav = j.record_benchmark(bench_px * bench_fx)
+        print(f"Benchmark {BENCHMARK_KEY}: {j.benchmark_units():,.4f} virtual units at {bench_px:,.2f} "
+              f"{bench.currency} (NAV {nav:,.2f} {cfg.base_currency}).")
 
     elif args.cmd == "topup":
         total = j.total_deposits()
@@ -97,6 +115,14 @@ def main() -> int:
         print(f"LLM spend     : US${j.llm_spend_usd():.2f} this month, US${j.llm_spend_usd('all'):.2f} lifetime")
         h = j.holdings_qty()
         print(f"holdings      : {h or 'none'}")
+        perf = from_journal(j)
+        if perf.days:
+            fmt = lambda v, f="{:+.2f}%": "n/a" if v is None else f.format(v)  # noqa: E731
+            print(f"vs {BENCHMARK_KEY}   : {perf.first_date} -> {perf.last_date} ({perf.days} days) "
+                  f"bot {fmt(perf.return_pct)} benchmark {fmt(perf.benchmark_return_pct)} "
+                  f"excess {fmt(perf.excess_pct)} alpha {fmt(perf.alpha_pct)} beta {fmt(perf.beta, '{:.2f}')}")
+        else:
+            print(f"vs {BENCHMARK_KEY}   : not enough daily values yet")
         print("\nlast 10 proposals:")
         for row in j.db.execute("SELECT ts, action, quantity, symbol, currency, limit_price, approved, block_reasons, reason "
                                 "FROM proposals ORDER BY id DESC LIMIT 10"):

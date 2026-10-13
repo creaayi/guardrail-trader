@@ -169,3 +169,19 @@ corrigés, avec accord humain. Sans effet en phase 1 (`enable_hedge = false`).
   exactement à son prix limite, > 0 (CLAUDE.md §8.3). Une sortie par stop n'a pas de prix limite : son
   slippage réel est déjà dans le prix. P&L relatif à IWDA : colonne prévue, remplie avec T7.
 - Les lignes `non_precise` déjà écrites (aucune en dehors des tests) restent telles quelles.
+
+## 13/10/2026 — T7 appliquée : benchmark IWDA
+
+- `journal_cli.py init` achète des parts virtuelles d'IWDA (AEB, EUR) = capital / prix du jour (100 % investi
+  au jour 1, CLAUDE.md §1) ; sans prix IWDA, `init` refuse. Un apport ultérieur (`topup`) est investi dans le
+  benchmark au snapshot suivant et compté comme flux, jamais comme performance.
+- Table `benchmark` (date, prix, parts, NAV, montant investi) : écrite à chaque run à côté de `nav_daily`,
+  la dernière valeur du jour fait foi (donc celle de `us_close`). Un prix manquant est journalisé, la dernière
+  valeur est reportée ; le benchmark ne bloque jamais un run.
+- `closed_trades.pnl_vs_benchmark_pct` : rendement de la décision moins celui d'IWDA sur les mêmes jours.
+- `guardrail_trader/metrics.py`, partagé avec les rapports (T9) : rendement pondéré dans le temps, écart, alpha,
+  beta, Sharpe, Sortino, drawdown max ; `journal_cli.py status` affiche l'écart, l'alpha et le beta.
+- **Conventions proposées par Claude Code, à confirmer par l'humain** (plan T0, §T7) : rendements quotidiens
+  sur la dernière valorisation du jour, apports retirés ; taux sans risque 0 ; 252 jours ; alpha = alpha de
+  Jensen annualisé, (moyenne r_p − beta × moyenne r_b) × 252 ; jours fériés d'Euronext : dernière valeur reportée.
+  Les seuils d'alpha du §9 (−6 %, −4 %, +3 %) s'appliquent à cet alpha annualisé.

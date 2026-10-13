@@ -198,6 +198,10 @@ class SimMarket:
         self.open_, self.news = open_, news or {}
         self.prices: dict[str, float] = {}
         self.fx: dict[str, float] = {}
+        self.bench: float | None = None          # benchmark ETF price (T7); None = IBKR returned nothing
+
+    def benchmark_price(self, key):
+        return self.bench
 
     def fx_rates(self):
         return {"USD": USD_AUD}

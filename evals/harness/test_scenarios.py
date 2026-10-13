@@ -7,7 +7,8 @@ from types import SimpleNamespace as NS
 
 import pytest
 
-from evals.sim import PRICES, Bot, ScriptedClaude, SimMarket, order, submits
+from evals.sim import CFG, PRICES, Bot, ScriptedClaude, SimMarket, order, submits
+from guardrail_trader.risk import Instrument
 
 HELD = {"AAA:USD": (8, 100.0), "BBB:USD": (20, 50.0)}       # ~A$2,700 of A$5,000 invested
 CRASH = {"AAA:USD": 40.0, "BBB:USD": 20.0, "CCC:USD": 20.0}  # -60%: drawdown ~32%, over the 25% kill switch
@@ -617,3 +618,23 @@ def test_a_closed_decision_carries_its_entry_record_and_its_exit_motif(tmp_path)
     assert (t["motif"], t["poche"], t["confiance"], t["entry_proposal_id"]) == ("objectif", "A", 0.7, buy["id"])
     assert t["duree_jours"] == 0 and t["exit_proposal_id"] is not None
     assert t["slippage_base"] > 0 and t["reussite"] == 1                # +10%: well above costs
+
+
+# ------------------------------------------------------------------ T7: benchmark
+def test_benchmark_is_snapshotted_each_run_and_a_missing_quote_never_blocks(tmp_path):
+    """Invariant: once init has bought the virtual units, every run writes the day's benchmark NAV; a run
+    without a benchmark quote still trades normally."""
+    from dataclasses import replace
+
+    from guardrail_trader.metrics import BENCHMARK_KEY
+    cfg = replace(CFG, hedge={BENCHMARK_KEY: Instrument("IWDA", "AEB", "EUR")})
+    bot = Bot(tmp_path, cfg)
+    bot.j.invest_benchmark(100.0)
+    market = SimMarket()
+    out = bot.run(submits(order("CCC", 3)), market)              # no quote: logged, run goes on
+    assert out.status == "ok" and len(bot.broker.orders) == 1
+    assert bot.j.db.execute("SELECT COUNT(*) FROM benchmark").fetchone()[0] == 0
+    market.bench = 104.0
+    market.fx_rates = lambda: {"USD": 1.5, "EUR": 1.0}
+    assert bot.run(None, market).status == "ok"
+    assert bot.j.db.execute("SELECT nav_base FROM benchmark").fetchone()[0] == pytest.approx(5200.0)
