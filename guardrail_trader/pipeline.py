@@ -332,6 +332,10 @@ def run_once(broker, market, j: Journal, cfg: RiskConfig, llm: LLMSetup, *, mode
                 info[p.key] = MarketInfo(prices[p.key], fx[p.currency], market.commission_base(p))
         decisions, _ = evaluate(result.proposals, state, info, cfg)
         rows = [(j.record_decision(run_id, d), d) for d in decisions]
+        for p, errs in result.incomplete:      # dropped after the revision: journaled as blocked
+            j.record_decision(run_id, Decision(p, False, [f"incomplete decision record: {e}" for e in errs]))
+            log(f"[gate] {p.action} {p.quantity:g} {p.symbol} @ {p.limit_price}: BLOCKED incomplete record: "
+                + "; ".join(errs))
         for _, d in rows:
             p = d.proposal
             log(f"[gate] {p.action} {p.quantity:g} {p.symbol} @ {p.limit_price}: "

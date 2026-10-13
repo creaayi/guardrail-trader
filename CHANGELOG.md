@@ -153,3 +153,19 @@ corrigés, avec accord humain. Sans effet en phase 1 (`enable_hedge = false`).
   surchargeable). Trois niveaux : résumé à chaque run ; anomalie immédiate en priorité haute (tout arrêt en
   code 3, `stop_sync_failed`, réconciliation, changement de palier, kill switch, gateway) ; watchdog
   « scheduler silencieux » après 2 h sans heartbeat en séance.
+
+## 13/10/2026 — T6 appliquée : fiche de décision et décisions fermées
+
+- Chaque ordre de Claude porte une fiche complète (`guardrail_trader/decision.py`) : `poche`, `these`
+  (≥ 40 caractères), `fiabilite`, `confiance` (0–1), `sources` ; en plus pour un BUY : `catalyseur`,
+  `horizon_jours`, `stop_pct`, `objectif_pct`, `invalidation` ; pour un SELL : `motif_sortie`
+  (`objectif` | `horizon` | `rebalancement` | `these_invalidee`). Fiche incomplète = ordre rejeté ;
+  le premier rejet consomme la révision unique, ensuite l'ordre est écarté et journalisé « bloqué ».
+- **Nouvelle clé obligatoire** `[universe] pockets = ["A"]` (phase 1, CLAUDE.md §2) : une autre poche est
+  refusée par la validation de la fiche et par la gate. L'ouverture de la poche B reste une décision humaine.
+- `proposals` et `closed_trades` enrichies par migration idempotente ; chaque décision fermée est reliée
+  au BUY qui l'a ouverte (poche, confiance, durée en jours calendaires).
+- Réussite = P&L net de commissions, moins un slippage forfaitaire de 0,05 % sur chaque jambe exécutée
+  exactement à son prix limite, > 0 (CLAUDE.md §8.3). Une sortie par stop n'a pas de prix limite : son
+  slippage réel est déjà dans le prix. P&L relatif à IWDA : colonne prévue, remplie avec T7.
+- Les lignes `non_precise` déjà écrites (aucune en dehors des tests) restent telles quelles.

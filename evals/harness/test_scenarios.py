@@ -512,7 +512,7 @@ def test_a_voluntary_full_sale_cancels_the_stop_first(tmp_path):
     out = bot.run(submits(order("CCC", 10, action="SELL")))
     assert out.status == "ok" and bot.reconciled() and bot.j.holdings_qty() == {}
     assert bot.broker.stops[perm].status == "Cancelled" and not bot.j.active_stops()
-    assert bot.j.db.execute("SELECT motif FROM closed_trades").fetchone()[0] == "non_precise"
+    assert bot.j.db.execute("SELECT motif FROM closed_trades").fetchone()[0] == "rebalancement"   # Claude's motif_sortie (T6)
 
 
 def test_a_partial_sale_shrinks_the_stop_to_what_is_left(tmp_path):
@@ -585,3 +585,35 @@ def test_trailing_raises_the_stop_from_the_bar_cache_and_never_lowers_it(tmp_pat
     hist = [r[0] for r in bot.j.db.execute("SELECT reason FROM stop_history ORDER BY id")]
     assert "trail" in hist
     cache.close()
+
+
+# ------------------------------------------------------------------ T6: decision records
+def test_an_incomplete_order_uses_the_revision_then_is_dropped_and_journaled(tmp_path):
+    """Invariant: an order without its full decision record never reaches the broker. The first submit
+    bounces (the single revision); a second incomplete submit is dropped, the complete order goes ahead."""
+    bare = order("AAA", 5)
+    del bare["confiance"]
+    client = ScriptedClaude([[("submit_orders", {"orders": [bare], "summary": "no confidence"})],
+                             [("submit_orders", {"orders": [bare, order("CCC", 3)], "summary": "again"})]])
+    bot = Bot(tmp_path)
+    out = bot.run(client)
+    assert out.status == "ok" and out.llm_calls == 2
+    assert [(o.symbol, o.qty) for o in bot.broker.orders.values()] == [("CCC", 3)]
+    rows = bot.j.db.execute("SELECT symbol, approved, block_reasons, poche FROM proposals ORDER BY id").fetchall()
+    assert [(r["symbol"], r["approved"]) for r in rows] == [("CCC", 1), ("AAA", 0)]
+    assert "missing field confiance" in rows[1]["block_reasons"] and rows[0]["poche"] == "A"
+
+
+def test_a_closed_decision_carries_its_entry_record_and_its_exit_motif(tmp_path):
+    """Invariant: a round trip leaves one closed_trades row linked to the BUY decision (pocket, confidence),
+    with Claude's exit motif and the success flag net of commissions and the slippage allowance."""
+    bot = Bot(tmp_path)
+    bot.run(submits(order("CCC", 30, confiance=0.7, poche="A")))
+    bot.broker.net_liquidation = 10000.0             # the paper account backs the bot's gain (account guard)
+    bot.run(submits(order("CCC", 30, "SELL", px=PRICES["CCC:USD"] * 1.10, motif_sortie="objectif")),
+            SimMarket({**PRICES, "CCC:USD": PRICES["CCC:USD"] * 1.10}))
+    t = bot.j.db.execute("SELECT * FROM closed_trades").fetchone()
+    buy = bot.j.db.execute("SELECT id, confiance FROM proposals WHERE action='BUY'").fetchone()
+    assert (t["motif"], t["poche"], t["confiance"], t["entry_proposal_id"]) == ("objectif", "A", 0.7, buy["id"])
+    assert t["duree_jours"] == 0 and t["exit_proposal_id"] is not None
+    assert t["slippage_base"] > 0 and t["reussite"] == 1                # +10%: well above costs

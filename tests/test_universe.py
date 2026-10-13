@@ -88,6 +88,7 @@ trail_atr_mult = 2.0
 files = ["{tmp_path / 'core.csv'}"]
 hedge_files = ["{tmp_path / 'hedge.csv'}"]
 enable_hedge = {str(enable_hedge).lower()}
+pockets = ["A"]
 ''')
     return load_risk_config(toml)       # absolute file paths: PROJECT_ROOT / "/abs" == "/abs"
 

@@ -44,6 +44,7 @@ files = [
 ]
 hedge_files = ["config/universe/hedge.csv"]   # pocket C: IWDA (benchmark), CSPX, EXSA, short EUR bonds
 enable_hedge = false   # phase 1: hedge instruments are never shown to Claude and the gate blocks them
+pockets = ["A"]        # pockets Claude may propose for (CLAUDE.md §2): phase 1 = A only; B is a dated human decision
 
 # Pocket A ranking, computed by code from the bar cache (scripts/refresh_bars.py, weekends).
 # Claude receives the top_n with their scores and never recomputes them (CHANGELOG 12/10/2026, T2b).

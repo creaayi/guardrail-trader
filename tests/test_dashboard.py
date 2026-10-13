@@ -1,3 +1,4 @@
+from pathlib import Path
 from types import SimpleNamespace as NS
 
 import pytest
@@ -168,3 +169,16 @@ def test_executor_refuses_blocked_decision():
     blocked = Decision(Proposal("CSCO", "SMART", "USD", "BUY", 1, 100.0, "x"), False, ["no"])
     with pytest.raises(RuntimeError):
         execute(broker=None, journal=None, decisions=[(1, blocked)], fx={})
+
+
+def test_decisions_show_pocket_confidence_and_thesis(j):
+    from guardrail_trader.decision import details, example
+    run = j.start_run("paper")
+    rec = {"action": "BUY", **example("BUY"), "confiance": 0.6}
+    j.record_decision(run, Decision(Proposal("CSCO", "SMART", "USD", "BUY", 2, 110.0, "x", poche="A",
+                                             details=details(rec)), True, []))
+    (row,) = dashboard_data.build(j, CFG)["decisions"]
+    assert (row["poche"], row["confiance"], row["fiabilite"]) == ("A", 0.6, "mecanique")
+    assert row["these"] == rec["these"]
+    html = (Path(dashboard_data.__file__).parent / "web" / "dashboard.html").read_text()
+    assert "decisionTags" in html and "r.these" in html
