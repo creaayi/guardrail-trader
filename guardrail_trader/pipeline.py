@@ -172,7 +172,7 @@ def run_once(broker, market, j: Journal, cfg: RiskConfig, llm: LLMSetup, *, mode
     stops_only: book stop fills, reconcile, (re)place stops, then stop (evening sync slot)."""
     for stale_id in j.abort_stale_runs():
         log(f"run {stale_id} was left 'running' by a process that died; marked aborted")
-    run_id = j.start_run(mode)
+    run_id = j.start_run(mode, slot.name if slot is not None else None)
     log(f"run {run_id} mode={mode} universe={len(cfg.universe)} budget={cfg.capital:g} {cfg.base_currency}")
     try:
         # 0. Is the gateway actually serving data? A connected socket is not enough: after IBKR's

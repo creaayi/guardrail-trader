@@ -67,6 +67,7 @@ nav:
   - Harness and agent loop: harness-and-loop.md
   - Protective stops: stops.md
   - Alerts and weekly report: alerts.md
+  - Dry-run week and day 0: dry-run-week.md
   - How stocks are chosen: stock-selection.md
   - Evals: evals.md
   - How to use: configuration.md
