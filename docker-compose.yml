@@ -61,6 +61,7 @@ services:
     volumes:
       - ./data:/app/data            # journal.sqlite, runs/, scheduler state/heartbeat
       - ./logs:/app/logs            # per-run logs
+      - ./reports:/app/reports      # weekly reports (scripts/weekly_report.py, Fridays)
       - ./config:/app/config:ro     # risk.toml + universe (edit on host, no rebuild)
     depends_on:
       - ib-gateway
