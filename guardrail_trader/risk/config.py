@@ -65,6 +65,12 @@ class RiskConfig:
     reduce_max_equity_pct: float = 100.0
     drawdown_resume_pct: float = 0.0    # RECOVERY (half-size BUYs) back to NORMAL below this drawdown
     daily_loss_halt_pct: float = 100.0  # a day's loss above this blocks every order the next day
+    # Protective stops (T5, CLAUDE.md §5). Required in risk.toml.
+    stop_atr_mult: float = 2.0          # initial stop = entry - this x ATR14 ...
+    stop_min_pct: float = 6.0           # ... at least this far below entry ...
+    stop_max_pct: float = 12.0          # ... and at most this far
+    breakeven_atr_mult: float = 1.0     # highest close >= entry + this x ATR14 -> stop raised to entry
+    trail_atr_mult: float = 2.0         # then trails this x ATR14 below the highest close; never lowered
 
 
 @dataclass(frozen=True)
@@ -101,6 +107,13 @@ def _pct(name: str, v, lo: float = 0.0, hi: float = 100.0) -> float:
     v = float(v)
     if not (lo < v <= hi):
         raise ValueError(f"{name} must be in ({lo}, {hi}], got {v}")
+    return v
+
+
+def _mult(name: str, v) -> float:
+    v = float(v)
+    if not 0 < v <= 10:
+        raise ValueError(f"{name} must be in (0, 10], got {v}")
     return v
 
 
@@ -172,6 +185,9 @@ def load_risk_config(path: Path | str = DEFAULT_RISK_PATH) -> RiskConfig:
     if not resume < pause < reduce < max_dd:
         raise ValueError(f"drawdown tiers must satisfy resume {resume} < pause {pause} < reduce {reduce} "
                          f"< max_drawdown {max_dd}")
+    stop_min, stop_max = _pct("stop_min_pct", lim["stop_min_pct"]), _pct("stop_max_pct", lim["stop_max_pct"])
+    if not stop_min < stop_max < max_dd:
+        raise ValueError(f"stops must satisfy stop_min_pct {stop_min} < stop_max_pct {stop_max} < max_drawdown {max_dd}")
     max_eq = _pct("max_equity_pct", lim["max_equity_pct"])
     reduce_eq = _pct("reduce_max_equity_pct", lim["reduce_max_equity_pct"])
     if reduce_eq > max_eq:
@@ -212,4 +228,9 @@ def load_risk_config(path: Path | str = DEFAULT_RISK_PATH) -> RiskConfig:
         reduce_max_equity_pct=reduce_eq,
         drawdown_resume_pct=resume,
         daily_loss_halt_pct=_pct("daily_loss_halt_pct", lim["daily_loss_halt_pct"]),
+        stop_atr_mult=_mult("stop_atr_mult", lim["stop_atr_mult"]),
+        stop_min_pct=stop_min,
+        stop_max_pct=stop_max,
+        breakeven_atr_mult=_mult("breakeven_atr_mult", lim["breakeven_atr_mult"]),
+        trail_atr_mult=_mult("trail_atr_mult", lim["trail_atr_mult"]),
     )

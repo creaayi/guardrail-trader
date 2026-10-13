@@ -13,7 +13,7 @@ from types import SimpleNamespace as NS
 from typing import Callable
 
 from guardrail_trader.broker import BrokerNotReadyError
-from guardrail_trader.broker.ibkr import OrderResult
+from guardrail_trader.broker.ibkr import ExecFill, OpenOrder, OrderResult
 from guardrail_trader.journal import Journal
 from guardrail_trader.pipeline import LLMSetup, run_once
 from guardrail_trader.risk import Instrument, Proposal, RiskConfig
@@ -42,6 +42,15 @@ class SimOrder:
     late_fill: float = 0.0          # shares that fill at IBKR *after* our cancel (never reported)
 
 
+@dataclass
+class SimStop:
+    perm: int
+    symbol: str
+    qty: float
+    price: float
+    status: str = "Submitted"     # Submitted | Cancelled | Filled
+
+
 class SimBroker:
     """IBKR as the bot sees it. `holdings` is the broker's truth (what reconciliation compares).
 
@@ -59,6 +68,10 @@ class SimBroker:
         self.fail_place_after: int | None = None    # raise on the Nth+1 place_order
         self.open: list = []                        # stray open orders reported by open_orders()
         self.net_liquidation, self.currency = 5000.0, "AUD"   # the whole paper account, as IBKR reports it
+        self.stops: dict[int, SimStop] = {}         # protective STP GTC orders, by permId
+        self.execs: list[ExecFill] = []             # what reqExecutions still reports (current day)
+        self._perms = itertools.count(9000)
+        self.fill_stop_on_cancel: set[str] = set()  # symbols whose stop triggers just before our cancel lands
 
     # reads
     def ensure_ready(self):
@@ -73,6 +86,53 @@ class SimBroker:
 
     def open_orders(self):
         return list(self.open)
+
+    def all_open_orders(self):
+        live = [OpenOrder(s.perm, 0, 1, s.symbol, "USD", "SELL", "STP", s.qty, s.price)
+                for s in self.stops.values() if s.status == "Submitted"]
+        return [*self.open, *live]
+
+    # stops
+    def place_stop(self, contract, quantity, stop_price):
+        s = SimStop(next(self._perms), contract.symbol, float(quantity), round(float(stop_price), 2))
+        self.stops[s.perm] = s
+        return OpenOrder(s.perm, s.perm, 1, s.symbol, "USD", "SELL", "STP", s.qty, s.price)
+
+    def modify_stop(self, perm_id, stop_price=None, quantity=None, never_below=None):
+        s = self.stops.get(perm_id)
+        if s is None or s.status != "Submitted":
+            return ("NotOpen" if s is None or s.status == "Cancelled" else s.status), math.nan
+        if stop_price is not None and (never_below is None or round(stop_price, 2) >= never_below - 1e-9):
+            s.price = round(float(stop_price), 2)
+        if quantity is not None:
+            s.qty = float(quantity)
+        return s.status, s.price
+
+    def cancel_stop(self, perm_id):
+        s = self.stops.get(perm_id)
+        if s is None:
+            return "NotOpen"
+        if s.status == "Submitted" and s.symbol in self.fill_stop_on_cancel:
+            self.trigger_stop(perm_id, s.price)      # race: the stop fired before the cancel arrived
+        if s.status == "Submitted":
+            s.status = "Cancelled"
+        return s.status
+
+    def executions(self, perm_ids):
+        return [e for e in self.execs if e.perm_id in perm_ids]
+
+    def trigger_stop(self, perm_id, price):
+        """Test hook: the stop fires at IBKR (between runs, or during one)."""
+        s = self.stops[perm_id]
+        s.status = "Filled"
+        key = f"{s.symbol}:USD"
+        self.holdings[key] = self.holdings.get(key, 0.0) - s.qty
+        self.execs.append(ExecFill(f"x{perm_id}", perm_id, s.symbol, "USD", "SLD", s.qty, price,
+                                   COMMISSION_USD, "USD", "t"))
+
+    def new_day(self):
+        """IBKR reqExecutions only reports the current day."""
+        self.execs = []
 
     def stock(self, symbol, exchange="SMART", currency="USD"):
         return NS(symbol=symbol, exchange=exchange, currency=currency)
@@ -140,6 +200,9 @@ class SimMarket:
 
     def fx_rates(self):
         return {"USD": USD_AUD}
+
+    def fx_to_base(self, currency):
+        return {"USD": USD_AUD, "AUD": 1.0}[currency]
 
     def price_all(self):
         return dict(self.quotes)

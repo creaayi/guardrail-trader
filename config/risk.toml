@@ -23,6 +23,12 @@ drawdown_reduce_pct = 12.0      # -> REDUCED: no BUY while equity > reduce_max_e
 reduce_max_equity_pct = 50.0
 drawdown_resume_pct = 4.0       # after PAUSED or REDUCED: BUYs at half max_position_pct until drawdown < this
 daily_loss_halt_pct = 3.0       # a day's loss > 3% (close to close) blocks every order the next day, except stops
+# Protective stops at IBKR (CLAUDE.md §5): STP GTC placed after every BUY fill.
+stop_atr_mult = 2.0             # initial stop = entry - 2 x ATR14, bounded to [-12%, -6%] from entry
+stop_min_pct = 6.0
+stop_max_pct = 12.0
+breakeven_atr_mult = 1.0        # highest close since entry >= entry + 1 x ATR14 -> stop raised to entry
+trail_atr_mult = 2.0            # then 2 x ATR14 below the highest close; a stop is never lowered
 max_price_deviation_pct = 0.5   # fat-finger guard: limit price must be within 0.5% of reference price
 max_commission_pct = 1.0        # block orders whose commission exceeds 1% of order value
 allow_fractional = false        # IBKR rejects fractional orders via API (error 10243, verified 2026-09-21)

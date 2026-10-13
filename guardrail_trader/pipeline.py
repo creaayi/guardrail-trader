@@ -1,10 +1,10 @@
-"""One bot run: reconcile -> price -> kill switch -> Claude -> risk gate -> execute -> journal.
+"""One bot run: stops -> reconcile -> price -> kill switch -> Claude -> risk gate -> execute -> journal.
 
 A plain function with its dependencies passed in (broker, market data, journal, LLM, clock), so
 the CLI (scripts/run_bot.py) and the scenario evals (evals/) drive exactly the same code.
 
 Return codes: 0 ok/skipped, 1 error, 2 gateway unusable (not ready / no market data - retry),
-3 needs a human (reconciliation failed, or the account holds less than the virtual capital).
+3 needs a human (reconciliation or stop sync failed, or the account holds less than the bot's value).
 """
 from __future__ import annotations
 
@@ -28,6 +28,7 @@ from guardrail_trader.risk import (
     liquidation_proposals,
 )
 from guardrail_trader.risk.gate import EPS, next_tier
+from guardrail_trader.stops import StopManager, StopSyncError
 
 RUNS_DIR = PROJECT_ROOT / "data" / "runs"
 NY = ZoneInfo("America/New_York")
@@ -57,6 +58,20 @@ class IBKRMarketData:
 
     def market_open(self, now: datetime) -> bool:
         return is_open(market_sessions(self.broker, next(iter(self.cfg.universe.values()))), now)
+
+    def refresh_bars(self, keys: list[str], cache, pace: float = 10.5) -> None:
+        """Latest daily bars for these instruments (held lines, for trailing stops), paced for IBKR."""
+        from guardrail_trader.bars import from_ibkr
+        for key in keys:
+            inst = self.cfg.universe.get(key) or self.cfg.hedge.get(key)
+            if inst is None:
+                continue
+            c = self.broker.stock(inst.symbol, inst.exchange, inst.currency)
+            raw = self.broker.ib.reqHistoricalData(c, endDateTime="", durationStr="1 M", barSizeSetting="1 day",
+                                                   whatToShow="TRADES", useRTH=True, formatDate=1, timeout=60)
+            if raw:
+                cache.upsert(key, from_ibkr(raw, self.broker.magnifier(c)))
+            self.broker.ib.sleep(pace)
 
     def history_summary(self, key: str) -> dict:
         return summarize_history(daily_history(self.broker, self.cfg.universe[key]))
@@ -103,8 +118,11 @@ def _jsonable(obj):
 def run_once(broker, market, j: Journal, cfg: RiskConfig, llm: LLMSetup, *, mode: str, dry_run: bool = False,
              fill_timeout: float = 120.0, my_picks: set[str] | None = None, web_search: bool = False,
              log: Callable[[str], None] = print, now: datetime | None = None,
-             runs_dir: Path = RUNS_DIR, bars=None, momentum_cfg: MomentumConfig | None = None) -> int:
-    """bars (BarCache) + momentum_cfg: give Claude the pocket A ranking; omitted = no ranking."""
+             runs_dir: Path = RUNS_DIR, bars=None, momentum_cfg: MomentumConfig | None = None,
+             trail_stops: bool = False, stops_only: bool = False) -> int:
+    """bars (BarCache) + momentum_cfg: give Claude the pocket A ranking; omitted = no ranking.
+    trail_stops: refresh held lines' bars and raise trailing stops (once a day, at the close slot).
+    stops_only: book stop fills, reconcile, (re)place stops, then stop (evening sync slot)."""
     for stale_id in j.abort_stale_runs():
         log(f"run {stale_id} was left 'running' by a process that died; marked aborted")
     run_id = j.start_run(mode)
@@ -121,17 +139,49 @@ def run_once(broker, market, j: Journal, cfg: RiskConfig, llm: LLMSetup, *, mode
             return 2
         log(f"broker ready: {snap.account_id} net liquidation {snap.net_liquidation:,.2f} {snap.currency}")
 
-        # 1. Reconcile: the ledger must match what IBKR actually holds.
+        clock = now or datetime.now(NY)
+        today = (clock if clock.tzinfo else clock.replace(tzinfo=NY)).astimezone(PARIS).date()
+        stops = StopManager(broker, j, cfg, fx_to_base=lambda c: 1.0 if c == cfg.base_currency else market.fx_to_base(c),
+                            bars_for=bars.bars if bars is not None else (lambda _k: []), log=log, dry_run=dry_run)
         ibkr = {instrument_key(p.symbol, p.currency): p.quantity for p in broker.positions() if abs(p.quantity) > 1e-9}
+
+        # 0b. Stops (T5): book the stop executions IBKR reports since the last run BEFORE comparing holdings.
+        try:
+            stops.sync(ibkr)
+        except StopSyncError as e:
+            j.finish_run(run_id, "stop_sync_failed", notes=str(e))
+            log(f"STOP SYNC FAILED: {e} Not trading; needs a human.")
+            return 3
+
+        # 1. Reconcile: the ledger must match what IBKR actually holds, and the only open orders allowed
+        # are the bot's own active stops (any client, any session: reqAllOpenOrders).
         mine = j.holdings_qty()
         if any(abs(ibkr.get(k, 0) - mine.get(k, 0)) > 1e-6 for k in set(ibkr) | set(mine)):
             j.finish_run(run_id, "reconcile_failed", notes=f"ibkr={ibkr} journal={mine}")
             log(f"RECONCILE FAILED: IBKR {ibkr} vs journal {mine}. Not trading; needs a human.")
             return 3
-        if broker.open_orders():
-            j.finish_run(run_id, "reconcile_failed", notes="unexpected open orders at IBKR")
-            log("Unexpected open orders at IBKR. Not trading; needs a human.")
+        known = {s["perm_id"] for s in j.active_stops()}
+        stray = [o for o in broker.all_open_orders() if getattr(o, "perm_id", None) not in known]
+        if stray:
+            j.finish_run(run_id, "reconcile_failed", notes=f"unexpected open orders at IBKR: {stray}")
+            log(f"Unexpected open orders at IBKR ({len(stray)}, not the bot's stops). Not trading; needs a human.")
             return 3
+
+        # 1b. Every holding gets a stop sized to it (repairs a missing one); trailing once a day.
+        try:
+            stops.ensure_all()
+            if trail_stops and mine:
+                if bars is not None and hasattr(market, "refresh_bars"):
+                    market.refresh_bars(list(mine), bars)
+                stops.trail(today)
+        except StopSyncError as e:
+            j.finish_run(run_id, "stop_sync_failed", notes=str(e))
+            log(f"STOP SYNC FAILED: {e} Not trading; needs a human.")
+            return 3
+        if stops_only:
+            j.finish_run(run_id, "stops_sync", notes=f"{len(j.active_stops())} active stop(s)")
+            log(f"Stops synced: {len(j.active_stops())} active. Nothing else to do in this slot.")
+            return 0
 
         # Empty allowlist (fail-closed universe, e.g. before the first refresh): nothing to price or buy.
         # Not a gateway problem, so not rc 2 (which the scheduler retries and the watchdog counts).
@@ -164,8 +214,6 @@ def run_once(broker, market, j: Journal, cfg: RiskConfig, llm: LLMSetup, *, mode
             f"drawdown {state.drawdown_pct:.2f}% orders this month {state.trades_this_month}")
 
         # Daily NAV (the day's last run wins) and drawdown tier (T4). The gate applies both.
-        clock = now or datetime.now(NY)
-        today = (clock if clock.tzinfo else clock.replace(tzinfo=NY)).astimezone(PARIS).date()
         j.record_nav(state.value_base, today)
         prev_tier, prev_until = j.tier()
         state.tier, state.pause_until = next_tier(prev_tier, prev_until, state.drawdown_pct, today, cfg)
@@ -185,7 +233,7 @@ def run_once(broker, market, j: Journal, cfg: RiskConfig, llm: LLMSetup, *, mode
             liq = liquidation_proposals(state, info, cfg)
             if not dry_run and usd_open:
                 rows = [(j.record_decision(run_id, Decision(p, True, [])), Decision(p, True, [])) for p in liq]
-                execute(rows, broker, j, fx, fill_timeout, log)
+                execute(rows, broker, j, fx, fill_timeout, log, stops=stops)
             return len(liq)
 
         if state.halted:
@@ -263,6 +311,7 @@ def run_once(broker, market, j: Journal, cfg: RiskConfig, llm: LLMSetup, *, mode
         agent = TradingAgent(
             client, cfg, state, market, my_picks, recent_activity=j.recent_activity(10), avg_costs=j.avg_costs(),
             momentum=momentum,
+            stops={instrument_key(s["symbol"], s["currency"]): s["stop_price"] for s in j.active_stops()},
             request_timeout_s=llm.request_timeout_s,
             **({} if llm.max_seconds is None else dict(max_seconds=llm.max_seconds)),
             web_search=web_search, log=log, model=llm.model,
@@ -294,7 +343,7 @@ def run_once(broker, market, j: Journal, cfg: RiskConfig, llm: LLMSetup, *, mode
             j.finish_run(run_id, "dry_run", state, result.summary)
             log(f"Dry run: {len(approved)} order(s) would be placed. Nothing sent.")
             return 0
-        execute(approved, broker, j, fx, fill_timeout, log)
+        execute(approved, broker, j, fx, fill_timeout, log, stops=stops)
         final = j.portfolio_state({k: prices_base[k] for k in j.holdings_qty()}, observe=False)
         j.finish_run(run_id, "ok", final, result.summary)
         log(f"Done. value {final.value_base:,.2f} cash {final.cash_base:,.2f}")

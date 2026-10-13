@@ -79,6 +79,11 @@ drawdown_reduce_pct = 12.0
 reduce_max_equity_pct = 50.0
 drawdown_resume_pct = 4.0
 daily_loss_halt_pct = 3.0
+stop_atr_mult = 2.0
+stop_min_pct = 6.0
+stop_max_pct = 12.0
+breakeven_atr_mult = 1.0
+trail_atr_mult = 2.0
 [universe]
 files = ["{tmp_path / 'core.csv'}"]
 hedge_files = ["{tmp_path / 'hedge.csv'}"]
@@ -178,7 +183,7 @@ def _gbx_broker(magnifier=100):
             cancelMktData=lambda c: None, sleep=lambda s: None, placeOrder=place, trades=lambda: [trade],
             whatIfOrder=lambda c, o: sent.setdefault("whatif", o.lmtPrice))
     b = IBKRBroker.__new__(IBKRBroker)
-    b.ib, b.account_id, b.readonly, b._magnifiers = ib, "DU1234567", False, {}
+    b.ib, b.account_id, b.readonly, b._magnifiers, b._details, b._rules = ib, "DU1234567", False, {}, {}, {}
     b.cfg = NS(mode="paper")
     return b, trade.contract, sent
 

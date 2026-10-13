@@ -63,6 +63,7 @@ Mise à jour du 12/10/2026 : décisions de validation de T0 intégrées (voir `C
 - `run_bot.py` nouveau step « stops » **avant la réconciliation des positions** : détecter et booker les stops exécutés depuis le dernier run (exécutions IBKR, commission comprise) → ledger + `closed_trades` + cooldown ; puis réconcilier ; puis relever les stops suiveurs (jamais abaisser) avant l'appel LLM.
 - Réconciliation (step 1) : les ordres ouverts connus dans `stops` sont tolérés ; tout autre ordre ouvert = arrêt.
 - Tests : calcul de stop borné [−12 %, −6 %], relèvement monotone, réconciliation avec stops, stop exécuté entre deux runs, aucune vente sans annulation/réduction préalable du stop (pas de position courte), stops hors quota mensuel.
+- État au 12/10/2026 : PR ouverte, en attente de validation humaine. `guardrail_trader/stops.py`, créneau `stops` 16:15–16:45 NY, `journal_cli.py stops` / `book-stop-fill`.
 
 ## T6 — Journal enrichi et closed_trades
 - `agent.py` : `_ORDER` exige `poche`, `these`, `catalyseur`, `fiabilite`, `horizon_jours`, `stop_pct`, `objectif_pct`, `invalidation`, `confiance`, `sources`. `SYSTEM_PROMPT` réécrit pour l'exiger et expliquer la calibration. Validation stricte dans `_dispatch` (ordre sans champ = rejeté avec raison).

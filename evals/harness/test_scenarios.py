@@ -447,3 +447,141 @@ def test_the_kill_switch_still_liquidates_on_a_daily_halt_day(tmp_path):
     bot.j.record_nav(4800.0, date(2026, 10, 12))
     out = bot.run(market=SimMarket(prices=CRASH), now=datetime(2026, 10, 13, 11, 0))
     assert out.status == "kill_switch" and {o.action for o in bot.broker.orders.values()} == {"SELL"}
+
+
+# ------------------------------------------------------------------ protective stops (T5)
+def _stop(bot, sym):
+    return next(s for s in bot.broker.stops.values() if s.symbol == sym and s.status == "Submitted")
+
+
+def test_every_buy_fill_gets_a_bounded_stop_and_reconciliation_tolerates_it(tmp_path):
+    """Invariant: a filled BUY leaves with a SELL STP GTC for the filled quantity, inside [-12%, -6%]."""
+    bot = Bot(tmp_path)
+    out = bot.run(submits(order("CCC", 10)))
+    assert out.status == "ok"
+    s = _stop(bot, "CCC")
+    assert s.qty == 10 and 20.0 * 0.88 - 1e-9 <= s.price <= 20.0 * 0.94 + 1e-9
+    assert bot.j.active_stop("CCC:USD")["perm_id"] == s.perm
+    assert bot.run().status == "ok"                                   # next run: the known stop is not stray
+    assert bot.j.orders_this_month() == 1                             # stops never count as orders
+
+
+def test_a_stray_order_next_to_the_stops_still_stops_the_bot(tmp_path):
+    bot = Bot(tmp_path)
+    bot.run(submits(order("CCC", 10)))
+    bot.broker.open = [object()]
+    assert bot.run().status == "reconcile_failed"
+
+
+def test_holdings_without_a_stop_get_one_at_the_next_run(tmp_path):
+    bot = Bot(tmp_path, holdings=HELD)                                # booked before stops existed
+    assert bot.run().status == "ok"
+    assert {s.symbol for s in bot.broker.stops.values() if s.status == "Submitted"} == {"AAA", "BBB"}
+
+
+def test_a_stop_hit_between_runs_is_booked_before_reconciliation_and_starts_the_cooldown(tmp_path):
+    from dataclasses import replace
+    from evals.sim import CFG
+    bot = Bot(tmp_path, cfg=replace(CFG, reentry_cooldown_days=10))
+    bot.run(submits(order("CCC", 10)))
+    s = _stop(bot, "CCC")
+    bot.broker.trigger_stop(s.perm, 18.5)                             # overnight at IBKR
+    out = bot.run(submits(order("CCC", 5)))                           # Claude tries to buy it back
+    assert out.status == "ok" and bot.reconciled() and bot.j.holdings_qty() == {}
+    trade = bot.j.db.execute("SELECT motif, quantity, exit_price FROM closed_trades").fetchone()
+    assert tuple(trade) == ("stop", 10, 18.5)
+    assert bot.j.db.execute("SELECT status FROM stops WHERE perm_id=?", (s.perm,)).fetchone()[0] == "filled"
+    reasons = bot.j.db.execute("SELECT block_reasons FROM proposals ORDER BY id DESC").fetchone()[0]
+    assert "stopped out" in reasons                                    # T3 cooldown now fed by T5
+
+
+def test_a_stop_fill_ibkr_no_longer_reports_stops_the_bot_for_a_human(tmp_path):
+    """Invariant: a missing execution is never guessed (price, commission): rc 3, no trading."""
+    bot = Bot(tmp_path)
+    bot.run(submits(order("CCC", 10)))
+    bot.broker.trigger_stop(_stop(bot, "CCC").perm, 18.5)
+    bot.broker.new_day()                                              # IBKR forgot yesterday's executions
+    out = bot.run(submits(order("AAA", 1)))
+    assert out.rc == 3 and out.status == "stop_sync_failed" and out.llm_calls == 0
+
+
+def test_a_voluntary_full_sale_cancels_the_stop_first(tmp_path):
+    bot = Bot(tmp_path)
+    bot.run(submits(order("CCC", 10)))
+    perm = _stop(bot, "CCC").perm
+    out = bot.run(submits(order("CCC", 10, action="SELL")))
+    assert out.status == "ok" and bot.reconciled() and bot.j.holdings_qty() == {}
+    assert bot.broker.stops[perm].status == "Cancelled" and not bot.j.active_stops()
+    assert bot.j.db.execute("SELECT motif FROM closed_trades").fetchone()[0] == "non_precise"
+
+
+def test_a_partial_sale_shrinks_the_stop_to_what_is_left(tmp_path):
+    bot = Bot(tmp_path)
+    bot.run(submits(order("CCC", 10)))
+    out = bot.run(submits(order("CCC", 4, action="SELL")))
+    assert out.status == "ok" and bot.reconciled()
+    assert _stop(bot, "CCC").qty == 6 and bot.j.active_stop("CCC:USD")["quantity"] == 6
+
+
+def test_stop_firing_during_the_cancel_never_leads_to_a_short(tmp_path):
+    """Invariant: stop + sale can never sell the same shares (race: the stop fires first)."""
+    bot = Bot(tmp_path)
+    bot.run(submits(order("CCC", 10)))
+    bot.broker.fill_stop_on_cancel.add("CCC")
+    out = bot.run(submits(order("CCC", 10, action="SELL")))
+    assert out.status == "ok" and bot.reconciled()
+    assert bot.broker.holdings.get("CCC:USD", 0) == 0                  # not -10
+    assert not [o for o in bot.broker.orders.values() if o.action == "SELL"]   # the sale was dropped
+    assert bot.j.db.execute("SELECT motif FROM closed_trades").fetchone()[0] == "stop"
+
+
+def test_kill_switch_cancels_stops_then_liquidates_without_shorting(tmp_path):
+    bot = Bot(tmp_path, holdings=HELD)
+    bot.run()                                                         # stops placed on AAA and BBB
+    out = bot.run(market=SimMarket(prices=CRASH))
+    assert out.status == "kill_switch" and bot.reconciled()
+    assert all(s.status == "Cancelled" for s in bot.broker.stops.values())
+    assert all(q >= 0 for q in bot.broker.holdings.values())
+    assert {r[0] for r in bot.j.db.execute("SELECT motif FROM closed_trades")} == {"kill"}
+
+
+def test_evening_sync_books_stop_fills_without_claude(tmp_path):
+    bot = Bot(tmp_path)
+    bot.run(submits(order("CCC", 10)))
+    bot.broker.trigger_stop(_stop(bot, "CCC").perm, 18.5)
+    client = submits(order("AAA", 1))
+    out = bot.run(client, stops_only=True)
+    assert out.status == "stops_sync" and out.llm_calls == 0 and bot.j.holdings_qty() == {}
+    bot.broker.new_day()                                              # next morning: nothing left to find
+    assert bot.run().status == "ok"
+
+
+def test_trailing_raises_the_stop_from_the_bar_cache_and_never_lowers_it(tmp_path):
+    from datetime import date, datetime, timedelta
+
+    from guardrail_trader.bars import Bar, BarCache
+    cache = BarCache(tmp_path / "bars.sqlite")
+    start = date.today() - timedelta(days=40)
+
+    def bars(closes):
+        return [Bar((start + timedelta(days=i)).isoformat(), c, c + 0.2, c - 0.2, c, 1e6) for i, c in enumerate(closes)]
+    cache.upsert("CCC:USD", bars([20.0] * 40))                         # ATR ~0.4
+    bot = Bot(tmp_path)
+    bot.run(submits(order("CCC", 10)), bars=cache)
+    first = _stop(bot, "CCC").price
+    assert first == 18.8                                              # 20 - 2 x 0.4 = 18.8 (-6%), bounded
+    entry_day = date.fromisoformat(bot.j.active_stop("CCC:USD")["entry_date"][:10])
+    later = [Bar((entry_day + timedelta(days=i)).isoformat(), c, c + 0.2, c - 0.2, c, 1e6)
+             for i, c in enumerate([20.5, 21.0, 22.0])]
+    cache.upsert("CCC:USD", later)
+    bot.run(bars=cache, trail_stops=True, now=datetime.combine(entry_day + timedelta(days=2), datetime.min.time()))
+    raised = _stop(bot, "CCC").price
+    from guardrail_trader.momentum import atr
+    a = atr(cache.bars("CCC:USD")[-30:])                               # gaps widen the ATR beyond 0.4
+    assert raised == pytest.approx(22.0 - 2 * a, abs=0.011)           # trails 2 x ATR below the highest close
+    cache.upsert("CCC:USD", [Bar((entry_day + timedelta(days=3)).isoformat(), 20.0, 20.2, 19.8, 20.0, 1e6)])
+    bot.run(bars=cache, trail_stops=True, now=datetime.combine(entry_day + timedelta(days=3), datetime.min.time()))
+    assert _stop(bot, "CCC").price == raised                          # never lowered
+    hist = [r[0] for r in bot.j.db.execute("SELECT reason FROM stop_history ORDER BY id")]
+    assert "trail" in hist
+    cache.close()
