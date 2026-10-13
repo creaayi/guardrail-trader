@@ -13,7 +13,7 @@ Fork de **guardrail-trader** (MIT). Ce fichier remplace le `CLAUDE.md` d'origine
 ## 1. Objectif et cadre
 
 - Mesurer si des décisions fondées sur de l'information publique et un raisonnement systématique battent un ETF monde, sur 12 mois, avec assez de décisions pour être interprétable.
-- **Capital virtuel** : 800 000 EUR (`[budget] capital`, `currency = "EUR"`) — amendé le 12/10/2026 (compte paper plafonné à 1 M USD, voir `CHANGELOG.md`). Le bot ne voit que son grand livre ; `journal_cli.py init` refuse de démarrer si la valeur liquidative du compte paper en EUR est inférieure au capital, et chaque run (après le kill switch) si elle est inférieure à la valeur virtuelle courante du bot (correction du 12/10/2026).
+- **Capital virtuel** : 950 000 EUR (`[budget] capital`, `currency = "EUR"`) — amendé le 12/10/2026 puis le 13/10/2026 (compte paper en EUR, ~1 003 000 EUR, voir `CHANGELOG.md`). Le bot ne voit que son grand livre ; `journal_cli.py init` refuse de démarrer si la valeur liquidative du compte paper en EUR est inférieure au capital, et chaque run (après le kill switch) si elle est inférieure à la valeur virtuelle courante du bot (correction du 12/10/2026).
 - **Durée** : 12 mois à partir du premier ordre réel (fin de la semaine à blanc). Points d'étape M+3 et M+6 (§9).
 - **Benchmark** : IWDA (iShares Core MSCI World UCITS, AEB, EUR), 100 % investi au jour 1, calculé en parallèle dans la table `benchmark`.
 
@@ -35,7 +35,7 @@ Fork de **guardrail-trader** (MIT). Ce fichier remplace le `CLAUDE.md` d'origine
 
 | Clé | Valeur | Note |
 |---|---|---|
-| `capital` / `currency` | 800 000 / EUR | amendé le 12/10/2026 (ex-1 000 000) |
+| `capital` / `currency` | 950 000 / EUR | amendé le 13/10/2026 (ex-800 000, ex-1 000 000) |
 | `max_position_pct` | 2.0 | par ligne, à l'entrée |
 | `min_position_pct` | 0.5 | nouvelle clé |
 | `max_sector_pct` | 20.0 | nouvelle clé, secteur via colonne `sector` |
