@@ -130,6 +130,7 @@ def test_list_universe_shows_name_sector_country_and_never_hedge(tmp_path):
 
 def test_shipped_universe_files_load():
     cfg = load_risk_config()
+    assert cfg.hedge["CSPX:USD"].exchange == "LSEETF"          # London ETFs: IBKR primary exchange LSEETF
     assert {"IWDA:EUR", "CSPX:USD", "EXSA:EUR"} <= set(cfg.hedge) and not cfg.enable_hedge
     assert all(i.sector and i.country for i in [*cfg.universe.values(), *cfg.hedge.values()])
 
@@ -140,7 +141,7 @@ def test_us_stock_routes_smart_without_primary_exchange():
     assert (c.symbol, c.exchange, c.currency, c.primaryExchange) == ("AAPL", "SMART", "USD", "")
 
 
-@pytest.mark.parametrize("ex", ["SBF", "AEB", "IBIS", "LSE", "EBS"])
+@pytest.mark.parametrize("ex", ["SBF", "AEB", "IBIS", "LSE", "LSEETF", "EBS"])
 def test_european_stock_routes_smart_with_its_primary_exchange(ex):
     c = stock_contract("XYZ", ex, "EUR")
     assert c.exchange == "SMART" and c.primaryExchange == ex

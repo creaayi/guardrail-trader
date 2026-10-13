@@ -11,8 +11,9 @@ from guardrail_trader.config import PROJECT_ROOT
 
 DEFAULT_RISK_PATH = PROJECT_ROOT / "config" / "risk.toml"
 
-# CLAUDE.md §3: US via SMART; Europe via SMART routing with these primary exchanges.
-EXCHANGES = {"SMART", "SBF", "AEB", "IBIS", "LSE", "EBS"}
+# CLAUDE.md §3: US via SMART; Europe via SMART routing with these primary exchanges. LSEETF is IBKR's
+# primary exchange for ETFs listed in London (CSPX in hedge.csv), verified on 13/10/2026.
+EXCHANGES = {"SMART", "SBF", "AEB", "IBIS", "LSE", "LSEETF", "EBS"}
 CURRENCIES = {"USD", "EUR", "GBP", "CHF"}
 UNIVERSE_COLUMNS = ("symbol", "exchange", "currency", "name", "sector", "country", "source")
 

@@ -115,3 +115,9 @@ Décision humaine. Le compte paper est libellé en EUR et vaut 1 003 038 EUR (co
   `journal_cli.py init` (valeur liquidative ≥ capital). Le garde-fou de chaque run reste comparé à la
   valeur virtuelle courante du bot.
 - Le journal n'est pas encore initialisé : `init` déposera directement 950 000 EUR.
+
+## 13/10/2026 — CSPX : place primaire LSEETF
+
+Constaté au premier `check_connection.py --sample` : IBKR range les ETF cotés à Londres sur la place
+primaire `LSEETF`, pas `LSE`. `hedge.csv` (CSPX) et la liste des places autorisées (`risk/config.py`)
+corrigés, avec accord humain. Sans effet en phase 1 (`enable_hedge = false`).
